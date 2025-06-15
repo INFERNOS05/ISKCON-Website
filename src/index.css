@@ -6,26 +6,27 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 0%; /* Black background */
+    --foreground: 36 100% 95%; /* Light amber text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 0 0% 10%; /* Very dark gray card */
+    --card-foreground: 36 100% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 36 100% 95%;    /* Gold/Amber color scheme for primary - more vibrant to match logo */
+    --primary: 45 100% 60%; /* Gold/Amber from the logo */
+    --primary-foreground: 0 0% 0%; /* Black text on amber */
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Dark amber for secondary */
+    --secondary: 45 80% 40%;
+    --secondary-foreground: 45 100% 95%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 70%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Light gold accent */
+    --accent: 45 100% 70%; /* Lighter gold */
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;

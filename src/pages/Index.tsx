@@ -5,19 +5,17 @@ import AboutSection from "@/components/AboutSection";
 import ImpactSection from "@/components/ImpactSection";
 import ProgramsSection from "@/components/ProgramsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
-import NewsSection from "@/components/NewsSection";
+import GallerySection from "@/components/GallerySection";
 import Footer from "@/components/Footer";
 
 const Index = () => {
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
+    <div className="min-h-screen bg-white">      <Header />
       <HeroSection />
       <AboutSection />
       <ImpactSection />
-      <ProgramsSection />
-      <TestimonialsSection />
-      <NewsSection />
+      <ProgramsSection />      <TestimonialsSection />
+      <GallerySection />
       <Footer />
     </div>
   );

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800">
+  <!-- Sun background -->
+  <circle cx="500" cy="300" r="250" fill="#f5a623" />
+  <circle cx="500" cy="300" r="200" fill="#ffd54f" />
+  
+  <!-- People around the sun - simplified representation -->
+  <!-- This is a simplified representation of people holding hands in a circle -->
+  <g fill="#5d2801">
+    <!-- Stylized people -->
+    <!-- We're creating 20 simplified human figures around the circle -->
+    <g id="person">
+      <circle cx="0" cy="-230" r="15" />
+      <rect x="-10" y="-215" width="20" height="40" />
+      <rect x="-30" y="-175" width="60" height="10" transform="rotate(-10)" />
+    </g>
+    
+    <!-- Replicate the person around the circle -->
+    <use href="#person" transform="rotate(0 500 300)" />
+    <use href="#person" transform="rotate(18 500 300)" />
+    <use href="#person" transform="rotate(36 500 300)" />
+    <use href="#person" transform="rotate(54 500 300)" />
+    <use href="#person" transform="rotate(72 500 300)" />
+    <use href="#person" transform="rotate(90 500 300)" />
+    <use href="#person" transform="rotate(108 500 300)" />
+    <use href="#person" transform="rotate(126 500 300)" />
+    <use href="#person" transform="rotate(144 500 300)" />
+    <use href="#person" transform="rotate(162 500 300)" />
+    <use href="#person" transform="rotate(180 500 300)" />
+    <use href="#person" transform="rotate(198 500 300)" />
+    <use href="#person" transform="rotate(216 500 300)" />
+    <use href="#person" transform="rotate(234 500 300)" />
+    <use href="#person" transform="rotate(252 500 300)" />
+    <use href="#person" transform="rotate(270 500 300)" />
+    <use href="#person" transform="rotate(288 500 300)" />
+    <use href="#person" transform="rotate(306 500 300)" />
+    <use href="#person" transform="rotate(324 500 300)" />
+    <use href="#person" transform="rotate(342 500 300)" />
+  </g>
+  
+  <!-- Text -->
+  <text x="500" y="600" font-family="Arial, sans-serif" font-weight="bold" font-size="100" fill="#f8f4e3" text-anchor="middle">PRACHETAS</text>
+  <line x1="175" y1="630" x2="825" y2="630" stroke="#f8f4e3" stroke-width="5" />
+  <text x="500" y="700" font-family="Arial, sans-serif" font-weight="bold" font-size="50" fill="#f8f4e3" text-anchor="middle">UPSCALING THE WORLD</text>
+</svg>
