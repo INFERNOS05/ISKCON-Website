@@ -7,35 +7,50 @@ const ProgramsSection = () => {
   const programs = [
     {
       icon: BookOpen,
-      title: "Education for All",
-      description: "Providing quality education and learning opportunities to children in underserved communities.",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+      title: "Education",
+      description: "Providing quality education and learning opportunities to children in underserved communities worldwide.",
+      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      color: "bg-pink-500",
+      lightColor: "bg-pink-100"
     },
     {
       icon: Heart,
       title: "Health & Nutrition",
-      description: "Ensuring children have access to healthcare, clean water, and nutritious meals.",
-      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+      description: "Ensuring children have access to healthcare, clean water, and nutritious meals for healthy development.",
+      image: "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      color: "bg-teal-500",
+      lightColor: "bg-teal-100"
     },
     {
       icon: Shield,
-      title: "Child Protection",
-      description: "Safeguarding children from abuse, exploitation, and harmful practices.",
-      image: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+      title: "Safety & Protection",
+      description: "Addressing issues like child labour, child marriage, trafficking and abuse to ensure child safety.",
+      image: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      color: "bg-purple-500",
+      lightColor: "bg-purple-100"
     },
     {
       icon: Sprout,
-      title: "Sustainable Development",
-      description: "Building resilient communities through environmental conservation and economic empowerment.",
-      image: "https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80"
+      title: "Child Participation",
+      description: "Building resilient communities through environmental conservation and economic empowerment programs.",
+      image: "https://images.unsplash.com/photo-1501854140801-50d01698950b?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+      color: "bg-orange-500",
+      lightColor: "bg-orange-100"
     }
   ];
 
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-4">
+    <section className="py-20 bg-gradient-to-b from-yellow-50 to-white relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-32 bg-yellow-400 opacity-20 transform -skew-y-1"></div>
+      
+      <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Programs</h2>
+          <div className="inline-block">
+            <div className="bg-yellow-400 text-black px-8 py-4 rounded-full text-2xl font-bold mb-6 transform -rotate-1">
+              What We Do
+            </div>
+          </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Comprehensive initiatives designed to address the multifaceted challenges 
             facing children and communities worldwide.
@@ -44,24 +59,31 @@ const ProgramsSection = () => {
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {programs.map((program, index) => (
-            <Card key={index} className="hover:shadow-lg transition-shadow duration-300">
+            <Card key={index} className="group hover:shadow-2xl transition-all duration-300 border-0 overflow-hidden bg-white hover:-translate-y-2">
               <div className="relative">
                 <img 
                   src={program.image} 
                   alt={program.title}
-                  className="w-full h-48 object-cover rounded-t-lg"
+                  className="w-full h-48 object-cover"
                 />
-                <div className="absolute top-4 left-4 bg-white p-2 rounded-full">
-                  <program.icon className="h-6 w-6 text-green-700" />
+                <div className={`absolute top-4 left-4 ${program.lightColor} p-3 rounded-full`}>
+                  <program.icon className={`h-6 w-6 text-gray-700`} />
                 </div>
+                {/* Colored bottom border */}
+                <div className={`absolute bottom-0 left-0 w-full h-1 ${program.color}`}></div>
               </div>
-              <CardHeader>
-                <CardTitle className="text-green-800">{program.title}</CardTitle>
-                <CardDescription>{program.description}</CardDescription>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-green-800 text-xl font-bold">{program.title}</CardTitle>
+                <div className={`w-12 h-1 ${program.color} rounded-full`}></div>
               </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white">
-                  Learn More
+              <CardContent className="space-y-4">
+                <CardDescription className="text-gray-600 leading-relaxed">
+                  {program.description}
+                </CardDescription>
+                <Button 
+                  className={`w-full ${program.color} hover:opacity-90 text-white font-semibold rounded-full`}
+                >
+                  Know More
                 </Button>
               </CardContent>
             </Card>
