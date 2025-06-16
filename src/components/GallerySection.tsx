@@ -1,143 +1,102 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const GallerySection = () => {
-  const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
-
-  const galleryImages = [
-    {
-      src: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      alt: "Children learning in classroom",
-      category: "Education",
-      location: "Bangladesh"
-    },
-    {
-      src: "https://images.unsplash.com/photo-1526717238673-7a664689bbfd?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      alt: "Clean water initiatives",
-      category: "Health",
-      location: "Ethiopia"
-    },
-    {
-      src: "https://images.unsplash.com/photo-1541781509699-63a472d18d5a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      alt: "Community engagement",
-      category: "Community",
-      location: "India"
-    },
-    {
-      src: "https://images.unsplash.com/photo-1491841651911-c44c30c34548?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      alt: "Children playing",
-      category: "Education",
-      location: "Kenya"
-    },
-    {
-      src: "https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      alt: "Medical assistance",
-      category: "Health",
-      location: "Nepal"
-    },
-    {
-      src: "https://images.unsplash.com/photo-1444213007800-cff19e5a1234?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      alt: "Natural environment conservation",
-      category: "Environment",
-      location: "Brazil"
-    }
+  const categories = [
+    { id: "all", label: "All Projects" },
+    { id: "education", label: "Education" },
+    { id: "healthcare", label: "Healthcare" },
+    { id: "community", label: "Community" },
   ];
 
-  const nextImage = () => {
-    if (selectedImageIndex === null) return;
-    setSelectedImageIndex((selectedImageIndex + 1) % galleryImages.length);
-  };
-
-  const prevImage = () => {
-    if (selectedImageIndex === null) return;
-    setSelectedImageIndex((selectedImageIndex - 1 + galleryImages.length) % galleryImages.length);
-  };
-
-  return (    <section className="py-20 bg-gray-900" id="gallery">
+  const gallery = [
+    {
+      id: 1,
+      title: "Educational Support in Rural Schools",
+      image: "/placeholder.svg",
+      categories: ["education", "all"]
+    },
+    {
+      id: 2,
+      title: "Scholarship Program for Underprivileged Children",
+      image: "/placeholder.svg",
+      categories: ["education", "all"]
+    },
+    {
+      id: 3,
+      title: "Medical Camp in Remote Villages",
+      image: "/placeholder.svg",
+      categories: ["healthcare", "all"]
+    },
+    {
+      id: 4,
+      title: "Women Empowerment Initiative",
+      image: "/placeholder.svg",
+      categories: ["community", "all"]
+    },
+    {
+      id: 5,
+      title: "Vocational Training for Youth",
+      image: "/placeholder.svg",
+      categories: ["education", "community", "all"]
+    },
+    {
+      id: 6,
+      title: "Health Awareness Drive",
+      image: "/placeholder.svg",
+      categories: ["healthcare", "all"]
+    }
+  ];
+  return (
+    <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-amber-400 mb-4">Our Impact Gallery</h2>
-          <p className="text-xl text-gray-300 max-w-3xl mx-auto">
-            Witness how we're upscaling communities through our impactful projects around the world.
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Our Impact Gallery</h2>
+          <p className="text-gray-600">
+            Explore our initiatives that are transforming lives across communities
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {galleryImages.map((image, index) => (
-            <Dialog key={index}>
-              <DialogTrigger asChild>
-                <div 
-                  className="relative overflow-hidden rounded-xl cursor-pointer group"
-                  onClick={() => setSelectedImageIndex(index)}
+        <Tabs defaultValue="all" className="w-full">
+          <div className="flex justify-center mb-8">
+            <TabsList className="bg-gray-100">
+              {categories.map((category) => (
+                <TabsTrigger 
+                  key={category.id} 
+                  value={category.id}
+                  className="data-[state=active]:bg-yellow-400 data-[state=active]:text-black"
                 >
-                  <img 
-                    src={image.src} 
-                    alt={image.alt}
-                    className="w-full h-80 object-cover transform transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-black bg-opacity-40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">                    <Badge className="self-start mb-2 bg-amber-500 hover:bg-amber-600">{image.category}</Badge>
-                    <p className="text-white font-medium text-lg">{image.alt}</p>
-                    <p className="text-gray-200 text-sm">{image.location}</p>
-                  </div>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl bg-black bg-opacity-90 border-none p-0">
-                <div className="relative">
-                  <Button 
-                    variant="ghost" 
-                    className="absolute top-2 right-2 text-white hover:bg-black/30 z-50 rounded-full p-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      document.querySelector('[data-radix-focus-guard]')?.parentElement?.click();
-                    }}
-                  >
-                    <X size={24} />
-                  </Button>
+                  {category.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
-                  <img 
-                    src={galleryImages[selectedImageIndex || index].src} 
-                    alt={galleryImages[selectedImageIndex || index].alt}
-                    className="w-full max-h-[80vh] object-contain"
-                  />
-                  
-                  <div className="absolute inset-x-0 bottom-0 p-4 bg-black bg-opacity-70">
-                    <p className="text-white font-medium text-lg">{galleryImages[selectedImageIndex || index].alt}</p>
-                    <p className="text-gray-300 text-sm">{galleryImages[selectedImageIndex || index].location}</p>
-                  </div>
-
-                  <Button 
-                    variant="ghost" 
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      prevImage();
-                    }}
-                  >
-                    <ChevronLeft size={24} />
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/50 text-white rounded-full p-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      nextImage();
-                    }}
-                  >
-                    <ChevronRight size={24} />
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+          {categories.map((category) => (
+            <TabsContent key={category.id} value={category.id}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {gallery
+                  .filter((item) => item.categories.includes(category.id))
+                  .map((item) => (
+                    <div key={item.id} className="group overflow-hidden rounded-lg shadow-md hover:shadow-xl transition-all border border-gray-200">
+                      <div className="relative overflow-hidden aspect-video">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                          <div>
+                            <span className="bg-yellow-400 text-black text-xs px-2 py-1 rounded-full">View Project</span>
+                            <h3 className="text-white font-medium mt-2">{item.title}</h3>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </TabsContent>
           ))}
-        </div>        <div className="text-center mt-12">
-          <Button className="bg-amber-500 hover:bg-amber-600 text-black font-medium">
-            View More Gallery Items
-          </Button>
-        </div>
+        </Tabs>
       </div>
     </section>
   );

@@ -11,38 +11,19 @@ declare global {
 const RAZORPAY_KEY_ID = "rzp_test_5Gr07DWc1NdDc9";
 const RAZORPAY_SECRET_KEY = "qm2Ze9AEhjKjBr0e1tKArHYr"; // Only used on server side
 
-// We're going to use ONE known working plan for testing
-// This ensures we're using a plan that definitely exists in your test account
-const TEST_PLAN_ID = "plan_Qh8sddf7VZG4t7"; // Plan for ₹500 SIP
-
-// For testing with known working data
-// Razorpay has a special subscription ID for testing subscription flow
-const TEST_SUBSCRIPTION_ID = "sub_00000000000001"; 
-
-/**
- * IMPORTANT NOTE ABOUT SUBSCRIPTION IDs:
- * 
- * In a proper production implementation:
- * 1. Subscription IDs must be unique for each customer and subscription
- * 2. Subscriptions should be created on your backend server via Razorpay's API
- * 3. The backend would call the Razorpay Subscriptions API to create a subscription
- * 4. The API returns a unique subscription ID which is then used in the frontend
- * 
- * For testing purposes:
- * - We're using a special test subscription ID (sub_00000000000001) supported by Razorpay
- * - This helps test the subscription flow without requiring a backend server
- * - In a real app with real money, this approach will NOT work
- * - You must implement proper server-side subscription creation
- */
-
-// For production, you would use different plans for different amounts
+// Plan IDs for different SIP amounts (monthly subscription plans)
+// These should match existing plans in your Razorpay account
 const PLAN_IDS = {
   100: "plan_Qh8r9nUPEt3Dbv",
   200: "plan_Qh8s8EzXQr7DXu", 
-  500: "plan_Qh8sddf7VZG4t7", // We'll use this one for testing
-  1000: "plan_Qh8t3Lof5U3BjD"
+  500: "plan_QhlbDG7RIgx5Ov", 
+  1000: "plan_QhlcT03kYhZf6v"
 };
 
+/**
+ * Razorpay checkout options interface
+ * Based on the official Razorpay documentation
+ */
 export interface RazorpayOptions {
   key: string;
   amount?: number; // in smallest currency unit (paise for INR), required for one-time payments
@@ -64,8 +45,26 @@ export interface RazorpayOptions {
     ondismiss?: () => void;
   };
   handler?: (response: RazorpayResponse) => void;
+  retry?: {
+    enabled?: boolean;
+    max_count?: number;
+  };
+  readonly?: {
+    email?: boolean;
+    contact?: boolean;
+  };
+  hidden?: {
+    contact?: boolean;
+    email?: boolean;
+  };
+  send_sms_hash?: boolean;
+  remember_customer?: boolean;
 }
 
+/**
+ * Razorpay payment response interface
+ * Includes both one-time and subscription payment responses
+ */
 export interface RazorpayResponse {
   razorpay_payment_id: string;
   razorpay_order_id?: string;
@@ -73,12 +72,18 @@ export interface RazorpayResponse {
   razorpay_subscription_id?: string;
 }
 
+/**
+ * Options for creating a subscription
+ * Based on Razorpay's API documentation
+ */
 export interface SubscriptionOptions {
-  plan_id?: string;
+  plan_id: string;
   customer_id?: string;
   total_count?: number;
   quantity?: number;
   start_at?: number;
+  expire_by?: number;
+  customer_notify?: number;
   addons?: Array<{
     item: {
       name: string;
@@ -87,8 +92,13 @@ export interface SubscriptionOptions {
     };
   }>;
   notes?: Record<string, string>;
+  offer_id?: string;
 }
 
+/**
+ * Loads the Razorpay checkout script
+ * @returns Promise that resolves to true if script loaded successfully
+ */
 export const loadRazorpayScript = (): Promise<boolean> => {
   return new Promise((resolve) => {
     if (window.Razorpay) {
@@ -98,11 +108,19 @@ export const loadRazorpayScript = (): Promise<boolean> => {
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.onerror = () => {
+      console.error("Failed to load Razorpay script");
+      resolve(false);
+    };
     document.body.appendChild(script);
   });
 };
 
+/**
+ * Creates a Razorpay checkout instance
+ * @param options - The checkout configuration options
+ * @returns A Razorpay checkout instance
+ */
 export const createRazorpayInstance = (options: RazorpayOptions) => {
   if (!window.Razorpay) {
     console.error("Razorpay SDK is not loaded");
@@ -118,7 +136,7 @@ export const createRazorpayInstance = (options: RazorpayOptions) => {
       throw new Error("Razorpay key is missing");
     }
     
-    // For subscriptions, subscription_id is required
+    // Handle subscription checkout
     if (finalOptions.subscription_id) {
       // Make sure we have the minimum required fields for subscriptions
       if (!finalOptions.name) {
@@ -129,18 +147,15 @@ export const createRazorpayInstance = (options: RazorpayOptions) => {
       // For subscriptions, we should not include amount and currency as they're defined in the plan
       delete finalOptions.amount;
       delete finalOptions.currency;
-      
-      // Validate subscription ID format - it should start with 'sub_'
-      if (!finalOptions.subscription_id.startsWith('sub_')) {
-        console.warn("Warning: Subscription ID may not be in the expected format. It should start with 'sub_'");
-      }
-    } else {
+    } 
+    // Handle one-time payment checkout
+    else {
       // For one-time payments, amount and currency are required
       if (!finalOptions.amount || !finalOptions.currency || !finalOptions.name) {
         throw new Error("Required fields missing for one-time payment checkout");
       }
       
-      // Ensure amount is a number (Razorpay requires amount in paise/smallest currency unit)
+      // Ensure amount is a number
       if (typeof finalOptions.amount !== 'number') {
         finalOptions.amount = parseFloat(String(finalOptions.amount));
       }
@@ -150,6 +165,19 @@ export const createRazorpayInstance = (options: RazorpayOptions) => {
       if (finalOptions.amount % 1 !== 0 && finalOptions.currency === 'INR') {
         finalOptions.amount = Math.round(finalOptions.amount * 100);
       }
+    }
+    
+    // Add better retry options
+    if (!finalOptions.retry) {
+      finalOptions.retry = {
+        enabled: true,
+        max_count: 3
+      };
+    }
+    
+    // Enable customer data remembering for better UX
+    if (finalOptions.prefill && finalOptions.prefill.email) {
+      finalOptions.remember_customer = true;
     }
     
     console.log("Final Razorpay options:", finalOptions);
@@ -167,6 +195,12 @@ export const createRazorpayInstance = (options: RazorpayOptions) => {
   }
 };
 
+/**
+ * Initialize a one-time payment using Razorpay checkout
+ * 
+ * @param options - Configuration for the one-time payment
+ * @returns Promise that resolves when the checkout is opened
+ */
 export const initializePayment = async ({
   amount,
   currency = "INR",
@@ -195,12 +229,7 @@ export const initializePayment = async ({
     if (!isLoaded) {
       throw new Error("Failed to load Razorpay SDK");
     }
-
-    // In production, you would typically:
-    // 1. Make an API call to your backend to create an order
-    // 2. Get the order_id from the backend
-    // 3. Pass the order_id to Razorpay
-
+    
     // Ensure amount is a valid number
     let finalAmount: number;
     if (typeof amount === 'string') {
@@ -212,27 +241,69 @@ export const initializePayment = async ({
       finalAmount = amount;
     }
     
-    // Ensure it's converted to paise (smallest currency unit for INR)
-    const amountInPaise = Math.round(finalAmount * 100);
+    let orderId: string | undefined = undefined;
     
-    // For now, we'll proceed with a direct checkout without server involvement
+    try {
+      // Create an order through our backend API
+      const apiUrl = '/api';
+      const orderResponse = await fetch(`${apiUrl}/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: finalAmount,
+          currency,
+          notes: {
+            ...notes,
+            payment_type: "one_time",
+            donor_name: prefill?.name,
+            donor_email: prefill?.email
+          }
+        })
+      });
+      
+      const orderResult = await orderResponse.json();
+      
+      if (!orderResponse.ok || !orderResult.success) {
+        throw new Error(orderResult.error || "Failed to create order");
+      }
+      
+      // Get the order ID from the response
+      orderId = orderResult.order.id;
+      console.log("Order created successfully:", { orderId, order: orderResult.order });
+    } catch (orderError) {
+      console.error("Error creating order:", orderError);
+      console.warn("Continuing with direct payment without order ID (less secure)");
+      // We'll continue without an order_id for development purposes
+    }
+    
+    // Configure checkout options
     const options: RazorpayOptions = {
       key: RAZORPAY_KEY_ID,
-      amount: amountInPaise, // in paise
-      currency,
+      amount: orderId ? undefined : Math.round(finalAmount * 100), // in paise (only if no order_id)
+      currency: orderId ? undefined : currency, // only if no order_id
+      order_id: orderId,
       name,
       description,
       prefill,
-      notes,
+      notes: {
+        ...notes,
+        payment_type: "one_time"
+      },
       theme: theme || { color: "#F59E0B" }, // amber-500
       modal: {
         ondismiss: onDismiss
       },
-      handler: handler
+      handler: handler,
+      retry: {
+        enabled: true,
+        max_count: 3
+      },
+      remember_customer: true
     };
 
     console.log("Razorpay one-time payment options:", JSON.stringify(options, null, 2));
 
+    // Create and open the Razorpay checkout
     const razorpay = createRazorpayInstance(options);
     if (razorpay) {
       console.log("Opening Razorpay checkout for one-time payment...");
@@ -255,183 +326,211 @@ export const verifyPayment = async (paymentData: RazorpayResponse): Promise<bool
   return true;
 };
 
-// Function to create a subscription plan on the server
-// In a real application, this would be a server-side API call to Razorpay
-export const createSubscriptionPlan = async (
-  amount: number,
-  currency: string = "INR",
-  interval: "weekly" | "monthly" | "yearly" = "monthly",
-  name: string = "Monthly Donation"
-): Promise<{ id: string }> => {
-  // In a real implementation, this would be a server-side call to:
-  // POST https://api.razorpay.com/v1/plans
-  // with the following request body:
-  // {
-  //   "period": interval,
-  //   "interval": 1,
-  //   "item": {
-  //     "name": name,
-  //     "amount": amount * 100,
-  //     "currency": currency
-  //   }
-  // }
-  
+/**
+ * Gets the appropriate subscription plan ID based on the amount
+ * This calls our backend API to find the right plan ID
+ * 
+ * @param amount - The subscription amount
+ * @param currency - The currency, defaults to INR
+ * @returns Promise with the plan ID
+ */
+export const getSubscriptionPlanId = async (
+  amount: number | string,
+  currency: string = "INR"
+): Promise<string> => {
   try {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
     // Convert amount to number if it's a string
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     
-    // Round to nearest valid amount for plan lookup
-    const validAmounts = [100, 200, 500, 1000];
-    let exactMatch = false;
-    let closestAmount = 1000; // Default to highest amount
-    
-    // Try to find an exact match first
-    for (const validAmount of validAmounts) {
-      if (Math.abs(numAmount - validAmount) < 1) {
-        closestAmount = validAmount;
-        exactMatch = true;
-        break;
-      }
+    if (isNaN(numAmount) || numAmount <= 0) {
+      throw new Error(`Invalid subscription amount: ${amount}`);
     }
     
-    // If no exact match, find closest valid amount
-    if (!exactMatch) {
-      let minDiff = Number.MAX_VALUE;
+    console.log(`Finding plan ID for amount: ₹${numAmount}`);
+      // API URL - Using proxy
+    const apiUrl = '/api';
+    
+    try {
+      // Call our backend API to get the plan ID
+      const response = await fetch(`${apiUrl}/get-plan-id?amount=${numAmount}`);
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to get plan ID");
+      }
+      
+      console.log(`API returned plan ID: ${result.planId} for amount: ₹${result.amount}`);
+      
+      return result.planId;
+    } catch (apiError) {
+      console.error("API error getting plan ID:", apiError);
+      
+      // Fallback to local implementation if server is not available
+      console.warn("Falling back to local plan ID lookup due to API error");
+      
+      // Valid amounts for SIP plans
+      const validAmounts = Object.keys(PLAN_IDS).map(Number);
+      
+      // Find the exact match or closest match
+      let exactMatch = false;
+      let matchedAmount: number = validAmounts[validAmounts.length - 1]; // Default to highest amount
+      
+      // Try to find an exact match first
       for (const validAmount of validAmounts) {
-        const diff = Math.abs(numAmount - validAmount);
-        if (diff < minDiff) {
-          minDiff = diff;
-          closestAmount = validAmount;
+        if (Math.abs(numAmount - validAmount) < 1) {
+          matchedAmount = validAmount;
+          exactMatch = true;
+          break;
         }
       }
+      
+      // If no exact match, find the closest valid amount
+      if (!exactMatch) {
+        let minDiff = Number.MAX_VALUE;
+        for (const validAmount of validAmounts) {
+          const diff = Math.abs(numAmount - validAmount);
+          if (diff < minDiff) {
+            minDiff = diff;
+            matchedAmount = validAmount;
+          }
+        }
+        
+        console.log(`No exact plan match for amount ₹${numAmount}, using closest plan for ₹${matchedAmount}`);
+      } else {
+        console.log(`Found exact plan match for amount ₹${matchedAmount}`);
+      }
+      
+      // Get the plan ID from our mapping
+      const planId = PLAN_IDS[matchedAmount as keyof typeof PLAN_IDS];
+      
+      if (!planId) {
+        throw new Error(`No plan found for amount ₹${matchedAmount}`);
+      }
+      
+      console.log(`Using subscription plan ID: ${planId} for amount ₹${matchedAmount}`);
+      
+      return planId;
     }
-    
-    // Get the plan ID from our mapping
-    const planId = PLAN_IDS[closestAmount as keyof typeof PLAN_IDS];
-    
-    if (!planId) {
-      throw new Error(`No plan found for amount ₹${closestAmount}`);
-    }
-    
-    if (exactMatch) {
-      console.log(`Using pre-configured plan for ₹${closestAmount}: ${planId}`);
-    } else {
-      console.log(`No exact plan match for amount ₹${numAmount}, using closest plan for ₹${closestAmount}: ${planId}`);
-    }
-    
-    console.log("Using subscription plan:", {
-      id: planId,
-      amount: closestAmount,
-      originalAmount: numAmount,
-      currency,
-      interval,
-      name
-    });
-    
-    return { id: planId };
   } catch (error) {
-    console.error("Error creating subscription plan:", error);
-    throw new Error("Failed to create subscription plan");
+    console.error("Error finding subscription plan:", error);
+    throw new Error(`Failed to find subscription plan: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 };
 
 // Function to create a subscription on the server
 // In a real application, this would be a server-side API call to Razorpay
-export const createSubscription = async (
+/**
+ * Creates a SIP (recurring) subscription through our backend API
+ * This calls our backend server which communicates with Razorpay API
+ * 
+ * @param planId - The Razorpay plan ID to use for this subscription
+ * @param customerDetails - Customer information 
+ * @param notes - Additional notes for the subscription
+ * @returns Promise with an object containing the subscription information
+ */
+export const prepareSipSubscription = async (
   planId: string,
   customerDetails: {
     name: string;
     email: string;
     contact?: string;
   },
-  notes: Record<string, string> = {},
-  forceTestMode: boolean = false
-): Promise<{ id: string }> => {
-  console.log("Creating subscription with plan:", planId);
+  notes: Record<string, string> = {}
+): Promise<{ 
+  id: string,
+  planId: string,
+  customerName: string,
+  customerEmail: string,
+  status?: string
+}> => {
+  console.log("Preparing SIP subscription with plan:", planId);
   console.log("Customer details:", customerDetails);
 
   try {
-    // IMPORTANT: In a production environment, you MUST create subscriptions on your backend server!
-    // This client-side implementation is for development/testing purposes only
+    // Validate inputs
+    if (!planId) {
+      throw new Error("Plan ID is required");
+    }
     
+    if (!customerDetails.name || !customerDetails.email) {
+      throw new Error("Customer name and email are required");
+    }
+    
+    // Prepare subscription data for the API call
     const subscriptionData = {
-      plan_id: planId,
-      customer_notify: 1,
-      total_count: 12, // 12 months subscription
+      planId,
+      customerDetails,
       notes: {
-        "Donor Name": customerDetails.name,
-        "Email": customerDetails.email,
+        "donor_name": customerDetails.name,
+        "donor_email": customerDetails.email,
+        "donation_type": "monthly_sip",
         ...notes
       }
     };
     
-    console.log("Creating subscription with data:", subscriptionData);
+    console.log("Calling backend API to create subscription with data:", subscriptionData);
+      // API URL - Using proxy, so we can just use /api directly
+    const apiUrl = '/api';
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    // In a real-world scenario:
-    // 1. We'd make an API call to our backend
-    // 2. Backend would create the subscription in Razorpay
-    // 3. Backend would return the subscription ID
-    //
-    // const response = await fetch('/api/create-subscription', {
-    //    method: 'POST',
-    //    headers: { 'Content-Type': 'application/json' },
-    //    body: JSON.stringify({
-    //      plan_id: planId,
-    //      full_name: customerDetails.name,
-    //      email: customerDetails.email,
-    //      phone_number: customerDetails.contact || '',
-    //      ...notes
-    //    })
-    //  });
-    //  const data = await response.json();
-    //  return { id: data.id };
-    
-    // For controlled development/testing environment:
-    if (forceTestMode) {
-      // Special test subscription ID provided by Razorpay for testing subscription flow
-      // This ID is specially handled by Razorpay's test environment and doesn't need to be unique      console.log("Using Razorpay's test subscription ID:", TEST_SUBSCRIPTION_ID);
-      return { id: TEST_SUBSCRIPTION_ID };    } else {
-      /**
-       * IMPORTANT: This is for demonstration purposes only
-       * 
-       * In a real application:
-       * 1. You would make a server API call to create the subscription
-       * 2. Your server would use Razorpay's API to create the subscription
-       * 3. Your server would return the unique subscription ID
-       * 
-       * Client-side generated subscription IDs will NOT work with real Razorpay payments
-       * This is because Razorpay needs to verify the subscription exists in their system
-       */
+    try {
+      // Call our backend API to create the subscription
+      const response = await fetch(`${apiUrl}/create-subscription`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscriptionData)
+      });
       
-      // Generate a unique ID that follows Razorpay's format (starts with sub_)
-      // NOTE: This is for UI demonstration only and WON'T work for real payments
-      const uniqueSubscriptionId = `sub_${Date.now().toString(36).substring(2, 8)}${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      console.log("Generated unique subscription ID for demo:", uniqueSubscriptionId);
+      const result = await response.json();
       
-      // Add a warning about the limitations of this approach
-      console.warn("⚠️ WARNING: This is a client-side generated subscription ID");
-      console.warn("⚠️ This will NOT work with real Razorpay subscriptions");
-      console.warn("⚠️ In production, subscriptions MUST be created through your backend server using Razorpay's API");
-      console.warn("⚠️ Consider setting useTestMode=true or implementing a proper backend");
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to create subscription");
+      }
       
-      // Display a more prominent warning in the console
-      console.log("%c ⚠️ CLIENT-SIDE SUBSCRIPTION CREATION NOT RECOMMENDED ⚠️ ", "background: #ff5757; color: white; font-size: 16px; font-weight: bold;");
+      console.log("Subscription created successfully:", result.subscription);
       
-      return { id: uniqueSubscriptionId };
+      return {
+        id: result.subscription.id,
+        planId: result.subscription.planId,
+        customerName: customerDetails.name,
+        customerEmail: customerDetails.email,
+        status: result.subscription.status
+      };
+    } catch (apiError) {
+      console.error("API error creating subscription:", apiError);
+      
+      // For development/testing - fallback to dummy subscription ID if server is not available
+      // In production, you would remove this fallback
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn("Using fallback test subscription ID due to API error");
+        return {
+          id: `sub_${Date.now().toString().substring(0, 10)}`,
+          planId,
+          customerName: customerDetails.name,
+          customerEmail: customerDetails.email,
+          status: "created"
+        };
+      } else {
+        throw apiError;
+      }
     }
   } catch (error) {
-    console.error("Error creating subscription:", error);
-    throw new Error("Failed to create subscription: " + (error instanceof Error ? error.message : "Unknown error"));
+    console.error("Error preparing subscription:", error);
+    throw new Error("Failed to prepare subscription: " + (error instanceof Error ? error.message : "Unknown error"));
   }
 };
 
-// Initialize a recurring payment using Razorpay subscriptions
+/**
+ * Initialize a recurring payment using Razorpay subscriptions
+ * @param options - Configuration for the recurring payment
+ * @returns Promise that resolves when the checkout is opened
+ */
+/**
+ * Initializes a recurring monthly SIP donation payment
+ * Uses Razorpay's subscription API with pre-configured plans
+ * 
+ * @param options - Configuration options for the recurring payment
+ * @returns Promise that resolves when checkout is opened
+ */
 export const initializeRecurringPayment = async ({
   amount,
   currency = "INR",
@@ -442,7 +541,6 @@ export const initializeRecurringPayment = async ({
   theme,
   handler,
   onDismiss,
-  useTestMode = true  // Default to using Razorpay's special test subscription ID
 }: {
   amount: number;
   currency?: string;
@@ -453,7 +551,6 @@ export const initializeRecurringPayment = async ({
   theme?: RazorpayOptions["theme"];
   handler?: (response: RazorpayResponse) => void;
   onDismiss?: () => void;
-  useTestMode?: boolean;
 }): Promise<void> => {
   try {
     console.log("Initializing recurring payment with:", { amount, currency, name, prefill });
@@ -463,27 +560,27 @@ export const initializeRecurringPayment = async ({
       throw new Error("Failed to load Razorpay SDK");
     }
 
-    // For consistent testing, always use ₹500 plan (this should match a plan in your Razorpay account)
-    const displayAmount = 500; 
-    const planId = TEST_PLAN_ID;
+    // Find the appropriate plan ID for this amount
+    const planId = await getSubscriptionPlanId(amount, currency);
     
-    console.log(`Using test SIP plan: ${planId} (₹${displayAmount})`);
+    // For display purposes, use the original amount
+    const displayAmount = amount;
+    console.log(`Using SIP plan: ${planId} for amount: ₹${displayAmount}`);
     
-    // Create a subscription with the appropriate mode
-    const subscription = await createSubscription(
+    // Prepare a subscription (in production, this would create a real subscription via your backend)
+    const subscription = await prepareSipSubscription(
       planId,
       {
         name: prefill?.name || name,
         email: prefill?.email || "",
         contact: prefill?.contact
       },
-      notes,
-      useTestMode  // Pass the test mode flag to use Razorpay's special test ID if true
+      notes
     );
     
-    console.log("Subscription created:", subscription);
+    console.log("Subscription prepared:", subscription);
     
-    // Configure Razorpay checkout with the subscription ID
+    // Configure Razorpay checkout with the appropriate options
     const options: RazorpayOptions = {
       key: RAZORPAY_KEY_ID,
       subscription_id: subscription.id,
@@ -492,20 +589,20 @@ export const initializeRecurringPayment = async ({
       prefill,
       notes: {
         ...notes,
-        test_mode: useTestMode ? "yes" : "no",
         monthly_amount: String(displayAmount),
-        sip_plan_id: planId
+        sip_plan_id: planId,
+        payment_type: "recurring_sip"
       },
       theme: theme || { color: "#F59E0B" },
       modal: {
         ondismiss: onDismiss
       },
-      handler: handler
+      handler: handler,
+      remember_customer: true
     };
-    
-    // Add debug info for troubleshooting
+      // Add debug info for troubleshooting
     console.log("Razorpay checkout options:", JSON.stringify(options, null, 2));
-    console.log(`Using subscription ID: ${subscription.id} (${useTestMode ? "test mode" : "unique ID mode"})`);
+    console.log(`Using subscription ID: ${subscription.id} for amount ₹${displayAmount}/month`);
 
     // Create and open the Razorpay checkout
     const razorpay = createRazorpayInstance(options);
@@ -513,7 +610,7 @@ export const initializeRecurringPayment = async ({
       throw new Error("Failed to create Razorpay instance");
     }
     
-    console.log("Opening Razorpay checkout for subscription...");
+    console.log("Opening Razorpay checkout for monthly SIP donation...");
     razorpay.open();
   } catch (error) {
     console.error("Razorpay subscription initialization failed:", error);

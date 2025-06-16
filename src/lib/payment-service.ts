@@ -1,5 +1,4 @@
-// This is a mock server endpoint for demonstration purposes only.
-// In a real application, you would implement this on your backend server.
+// This service handles payment verification with our backend server.
 import { RazorpayResponse } from "./razorpay";
 
 export interface PaymentVerificationRequest {
@@ -22,33 +21,65 @@ export interface PaymentVerificationResponse {
   message: string;
 }
 
-// Simulate a server-side verification
+// Verify the payment with our backend server
 export const verifyPaymentWithServer = async (
   data: PaymentVerificationRequest
 ): Promise<PaymentVerificationResponse> => {
-  // In a real application, this would be a call to your backend API
-  // which would then verify the payment with Razorpay's server APIs
-  
-  // For one-time payments, verify signature using:
-  // hmac_sha256(orderId + "|" + paymentId, secret) === signature
-  
-  // For subscriptions, verify subscription status using Razorpay API:
-  // GET https://api.razorpay.com/v1/subscriptions/{subscriptionId}
-  
   const isSubscription = !!data.subscriptionId;
   
-  // For demo purposes, we'll just return a successful response after a short delay
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve({
+  try {
+    console.log(`Verifying ${isSubscription ? 'subscription' : 'payment'} with server:`, data);
+      // API URL - Using proxy
+    const apiUrl = '/api';
+    
+    // Choose the right endpoint based on payment type
+    const endpoint = isSubscription ? 'verify-subscription' : 'verify-payment';
+    
+    // Call our backend API to verify the payment/subscription
+    const response = await fetch(`${apiUrl}/${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        paymentId: data.paymentId,
+        orderId: data.orderId,
+        signature: data.signature,
+        subscriptionId: data.subscriptionId,
+        amount: data.amount,
+        currency: data.currency,
+        donorInfo: data.donorInfo
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Payment verification failed");
+    }
+    
+    return {
+      success: true,
+      transactionId: result.transactionId || (isSubscription ? data.subscriptionId! : data.paymentId),
+      message: result.message || (isSubscription ? "Subscription verified successfully" : "Payment verified successfully")
+    };
+  } catch (error) {
+    console.error(`Error verifying ${isSubscription ? 'subscription' : 'payment'}:`, error);
+    
+    // For development fallback to successful response if server is not available
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn("Using fallback verification due to API error");
+      return {
         success: true,
         transactionId: isSubscription ? data.subscriptionId! : data.paymentId,
-        message: isSubscription 
-          ? "Subscription verified successfully" 
-          : "Payment verified successfully"
-      });
-    }, 1000);
-  });
+        message: isSubscription ? "Subscription verified successfully (dev mode)" : "Payment verified successfully (dev mode)"
+      };
+    }
+    
+    return {
+      success: false,
+      transactionId: isSubscription ? data.subscriptionId! : data.paymentId,
+      message: `Payment verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    };
+  }
 };
 
 // Process Razorpay response from client
@@ -77,18 +108,23 @@ export const processRazorpayResponse = async (
       donorInfo
     };
     
-    // In a real implementation, we would:
-    // 1. For one-time payments: Verify the signature using the order_id and payment_id
-    // 2. For subscriptions: Verify that the subscription is active and the user has authorized payments
+    // Validate that we have essential data
+    if (isSubscription && !verificationData.subscriptionId) {
+      throw new Error("Missing subscription ID in payment response");
+    }
     
-    // For testing, we'll mock a successful verification
+    if (!isSubscription && !verificationData.paymentId) {
+      throw new Error("Missing payment ID in payment response");
+    }
+    
+    // Call our verification service
     return await verifyPaymentWithServer(verificationData);
   } catch (error) {
     console.error("Payment verification failed:", error);
     return {
       success: false,
       transactionId: response.razorpay_payment_id || response.razorpay_subscription_id || "",
-      message: "Payment verification failed"
+      message: "Payment verification failed: " + (error instanceof Error ? error.message : "Unknown error")
     };
   }
 };

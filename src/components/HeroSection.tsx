@@ -1,60 +1,57 @@
-
 import { Button } from "@/components/ui/button";
-import { Play } from "lucide-react";
 import { Link } from "react-router-dom";
+import { ArrowRight, Play } from "lucide-react";
 
-const HeroSection = () => {return (
-      <section className="relative bg-black text-white pb-0 overflow-hidden min-h-screen flex items-center">
-        {/* Yellow Banner at bottom only */}
-        <div className="absolute bottom-0 left-0 w-full h-8 bg-amber-400"></div>
-          {/* No background decorative elements - clean design */}
-      
-      {/* Main content container */}
-      <div className="container mx-auto px-4 relative z-10 flex flex-col h-full">
-        <div className="grid md:grid-cols-2 gap-8 lg:gap-16 items-center w-full">
-          {/* Left content column */}          <div className="space-y-8">
-            <div className="space-y-4">
-              <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-                PRACHETAS <span className="text-amber-400">FOUNDATION</span>
-              </h1>
-              <h2 className="text-3xl md:text-4xl font-bold text-amber-400 mt-2">
-                WHERE COMPASSION MEETS ACTION
-              </h2>
-              <h3 className="text-xl md:text-2xl font-medium text-white mt-4">
-                Join us in making a difference
-              </h3>
-            </div>
-            <p className="text-lg leading-relaxed max-w-xl">
-              Your support can transform lives. Together, we can create lasting positive change and build 
-              a world where everyone has access to opportunities and resources.
+const HeroSection = () => {
+  return (
+    <section className="relative py-20 md:py-32 bg-black text-white overflow-hidden">
+      <div className="absolute inset-0 opacity-20">
+        <img
+          src="/code-bg.jpg"
+          className="w-full h-full object-cover"
+          alt="Background"
+        />
+      </div>
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="max-w-xl">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              <span className="text-white">PRACHETAS</span> <br />
+              <span className="text-yellow-400">FOUNDATION</span>
+            </h1>
+            <h2 className="text-2xl md:text-3xl text-yellow-400 font-bold mb-6">
+              WHERE COMPASSION MEETS ACTION
+            </h2>
+            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+              Join us in making a difference
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">              <Button size="lg" className="bg-amber-400 hover:bg-amber-500 text-black font-bold px-8 py-3 rounded-none text-lg" asChild>
+            <p className="text-gray-300 mb-8">
+              Your support can transform lives. Together, we can create lasting positive change
+              and build a world where everyone has access to opportunities and resources.
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Button asChild size="lg" className="bg-yellow-400 text-black hover:bg-yellow-500">
                 <Link to="/donate">Join Our Mission</Link>
               </Button>
-              <Button size="lg" className="bg-transparent border-2 border-amber-400 text-white hover:bg-amber-400/10 rounded-none px-8 py-3 flex items-center">
-                <Play className="h-5 w-5 mr-2" fill="currentColor" />
-                Watch Our Story
+              <Button asChild size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-black">
+                <Link to="/about">
+                  <Play className="mr-2 h-4 w-4" /> Watch Our Story
+                </Link>
               </Button>
             </div>
           </div>
-            {/* Right column with laptop/code image */}          <div className="relative mt-8 md:mt-0">
-            <div className="relative">              <img 
-                src="/macbook-code.jpg" 
-                alt="Macbook with code" 
-                className="w-full h-[400px] md:h-[500px] object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = "https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1172&q=80";
-                  e.currentTarget.onerror = null;
-                }}
+          <div className="relative hidden md:block">
+            <div className="relative">
+              <img 
+                src="/laptop-code.jpg" 
+                alt="Computer with code"
+                className="rounded-lg shadow-lg" 
               />
+              <div className="absolute bottom-4 right-4 bg-yellow-400 text-black px-6 py-4 rounded-lg font-bold text-3xl flex flex-col items-center">
+                <span className="text-5xl">50,000+</span>
+                <span className="text-sm">Lives Impacted</span>
+              </div>
             </div>
-            
-            {/* Stats Card */}
-            <div className="absolute bottom-12 right-4 md:right-8 bg-white p-5 rounded-md shadow-lg border-2 border-amber-400">
-              <div className="flex flex-col items-center">
-                <div className="text-4xl md:text-5xl font-bold text-amber-400">50,000+</div>
-                <div className="text-sm md:text-base font-medium text-black">Lives Impacted</div>
-              </div>            </div>
           </div>
         </div>
       </div>
