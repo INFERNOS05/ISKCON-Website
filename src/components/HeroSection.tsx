@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Play } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const HeroSection = () => {return (
       <section className="relative bg-black text-white pb-0 overflow-hidden min-h-screen flex items-center">
@@ -27,10 +28,9 @@ const HeroSection = () => {return (
               Your support can transform lives. Together, we can create lasting positive change and build 
               a world where everyone has access to opportunities and resources.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button size="lg" className="bg-amber-400 hover:bg-amber-500 text-black font-bold px-8 py-3 rounded-none text-lg">
-                Join Our Mission
-              </Button>              
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">              <Button size="lg" className="bg-amber-400 hover:bg-amber-500 text-black font-bold px-8 py-3 rounded-none text-lg" asChild>
+                <Link to="/donate">Join Our Mission</Link>
+              </Button>
               <Button size="lg" className="bg-transparent border-2 border-amber-400 text-white hover:bg-amber-400/10 rounded-none px-8 py-3 flex items-center">
                 <Play className="h-5 w-5 mr-2" fill="currentColor" />
                 Watch Our Story
