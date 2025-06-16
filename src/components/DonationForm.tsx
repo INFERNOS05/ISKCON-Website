@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Check, CreditCard, Heart, ArrowRight, Smartphone, Building, AlertCircle } from "lucide-react";
+import { Check, Heart, ArrowRight, AlertCircle, Shield } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { initializePayment, RazorpayResponse, verifyPayment } from "@/lib/razorpay";
+import { processRazorpayResponse } from "@/lib/payment-service";
+import { toast } from "@/components/ui/use-toast";
 
 type DonorInfo = {
   firstName: string;
@@ -22,38 +24,24 @@ type ValidationErrors = {
   lastName?: string;
   email?: string;
   phone?: string;
-  cardNumber?: string;
-  cardExpMonth?: string;
-  cardExpYear?: string;
-  cardCvv?: string;
-  upiId?: string;
-  bankName?: string;
   amount?: string;
 }
 
-type CardInfo = {
-  cardNumber: string;
-  cardExpMonth: string;
-  cardExpYear: string;
-  cardCvv: string;
+type PaymentResponse = {
+  id: string;
+  orderId?: string;
+  signature?: string;
+  status: "success" | "failed" | "pending";
 }
 
-type UpiInfo = {
-  upiId: string;
-}
-
-type BankingInfo = {
-  bankName: string;
-}
-
-const DonationForm = () => {
-  const [searchParams] = useSearchParams();  const [amount, setAmount] = useState<string>("1000");
-  const [paymentMethod, setPaymentMethod] = useState<string>("card");
+const DonationForm = () => {  const [searchParams] = useSearchParams();
+  const [amount, setAmount] = useState<string>("1000");
   const [isMonthly, setIsMonthly] = useState<boolean>(false);
   const [formStep, setFormStep] = useState<number>(1);
   const [formSubmitted, setFormSubmitted] = useState<boolean>(false);
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [paymentResponse, setPaymentResponse] = useState<PaymentResponse | null>(null);
 
   const [donorInfo, setDonorInfo] = useState<DonorInfo>({
     firstName: "",
@@ -63,27 +51,7 @@ const DonationForm = () => {
     message: ""
   });
 
-  const [cardInfo, setCardInfo] = useState<CardInfo>({
-    cardNumber: "",
-    cardExpMonth: "",
-    cardExpYear: "",
-    cardCvv: ""
-  });
-
-  const [upiInfo, setUpiInfo] = useState<UpiInfo>({
-    upiId: ""
-  });
-
-  const [bankingInfo, setBankingInfo] = useState<BankingInfo>({
-    bankName: ""
-  });
-
   const predefinedAmounts = ["500", "1000", "2500", "5000", "10000"];
-  const banks = [
-    "State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", 
-    "Punjab National Bank", "Bank of Baroda", "Kotak Mahindra Bank", 
-    "Yes Bank", "IndusInd Bank", "Union Bank of India"
-  ];
 
   // Handle URL params for pre-filled amount
   useEffect(() => {
@@ -121,38 +89,6 @@ const DonationForm = () => {
     }
   };
 
-  const handleCardInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCardInfo({
-      ...cardInfo,
-      [name]: value
-    });
-
-    // Clear validation error when field is filled
-    if (value) {
-      setErrors({...errors, [name]: undefined});
-    }
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    if (name === "cardExpMonth" || name === "cardExpYear") {
-      setCardInfo({
-        ...cardInfo,
-        [name]: value
-      });
-    } else if (name === "bankName") {
-      setBankingInfo({
-        ...bankingInfo,
-        [name]: value
-      });
-    }
-
-    // Clear validation error when field is filled
-    if (value) {
-      setErrors({...errors, [name]: undefined});
-    }
-  };
-
   const validateStep1 = () => {
     const newErrors: ValidationErrors = {};
     
@@ -163,7 +99,6 @@ const DonationForm = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const validateStep2 = () => {
     const newErrors: ValidationErrors = {};
     
@@ -180,37 +115,9 @@ const DonationForm = () => {
     } else if (!/\S+@\S+\.\S+/.test(donorInfo.email)) {
       newErrors.email = "Please enter a valid email";
     }
-    
-    if (paymentMethod === "card") {
-      if (!cardInfo.cardNumber.trim()) {
-        newErrors.cardNumber = "Card number is required";
-      } else if (!/^\d{16}$/.test(cardInfo.cardNumber.replace(/\s/g, ''))) {
-        newErrors.cardNumber = "Please enter a valid 16-digit card number";
-      }
-      
-      if (!cardInfo.cardExpMonth) {
-        newErrors.cardExpMonth = "Required";
-      }
-      
-      if (!cardInfo.cardExpYear) {
-        newErrors.cardExpYear = "Required";
-      }
-      
-      if (!cardInfo.cardCvv.trim()) {
-        newErrors.cardCvv = "CVV is required";
-      } else if (!/^\d{3,4}$/.test(cardInfo.cardCvv)) {
-        newErrors.cardCvv = "Invalid CVV";
-      }
-    } else if (paymentMethod === "upi") {
-      if (!upiInfo.upiId.trim()) {
-        newErrors.upiId = "UPI ID is required";
-      } else if (!upiInfo.upiId.includes("@")) {
-        newErrors.upiId = "Please enter a valid UPI ID";
-      }
-    } else if (paymentMethod === "netbanking") {
-      if (!bankingInfo.bankName) {
-        newErrors.bankName = "Please select your bank";
-      }
+
+    if (donorInfo.phone && !/^\d{10}$/.test(donorInfo.phone.replace(/\D/g, ''))) {
+      newErrors.phone = "Please enter a valid 10-digit phone number";
     }
     
     setErrors(newErrors);
@@ -227,6 +134,86 @@ const DonationForm = () => {
 
   const prevStep = () => {
     setFormStep(formStep - 1);
+  };  const handlePaymentSuccess = async (response: RazorpayResponse) => {
+    try {
+      // Process the payment response with our payment service
+      const verificationResult = await processRazorpayResponse(
+        response, 
+        parseFloat(amount), 
+        {
+          name: `${donorInfo.firstName} ${donorInfo.lastName}`,
+          email: donorInfo.email,
+          phone: donorInfo.phone
+        }
+      );
+      
+      if (verificationResult.success) {
+        setPaymentResponse({
+          id: response.razorpay_payment_id,
+          orderId: response.razorpay_order_id,
+          signature: response.razorpay_signature,
+          status: "success"
+        });
+        setFormSubmitted(true);
+        setIsProcessing(false);
+        
+        // Show success toast
+        toast({
+          title: "Payment Successful",
+          description: `Thank you for your donation of ${formatAmount(amount)}.`,
+        });
+      } else {
+        throw new Error(verificationResult.message || "Payment verification failed");
+      }
+    } catch (error) {
+      console.error("Payment processing error:", error);
+      setIsProcessing(false);
+      
+      toast({
+        variant: "destructive",
+        title: "Payment Failed",
+        description: "There was an issue processing your payment. Please try again.",
+      });
+    }
+  };
+
+  const processRazorpayPayment = () => {
+    setIsProcessing(true);
+    
+    const amountValue = parseFloat(amount);
+    if (isNaN(amountValue) || amountValue <= 0) {
+      setErrors({...errors, amount: "Please enter a valid amount"});
+      setIsProcessing(false);
+      return;
+    }
+
+    // Initialize Razorpay payment
+    initializePayment({
+      amount: amountValue,
+      name: "PRACHETAS FOUNDATION",
+      description: `Donation ${isMonthly ? "(Monthly)" : ""}`,
+      prefill: {
+        name: `${donorInfo.firstName} ${donorInfo.lastName}`,
+        email: donorInfo.email,
+        contact: donorInfo.phone
+      },
+      notes: {
+        payment_for: "Donation",
+        recurring: isMonthly ? "yes" : "no",
+        donor_message: donorInfo.message || ""
+      },
+      theme: {
+        color: "#F59E0B" // amber-500 color
+      },
+      handler: handlePaymentSuccess,
+      onDismiss: () => {
+        setIsProcessing(false);
+        toast({
+          title: "Payment Cancelled",
+          description: "You have cancelled the payment process.",
+        });
+      }
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -238,22 +225,10 @@ const DonationForm = () => {
     }
     
     if (formStep === 3) {
-      setIsProcessing(true);
-      
-      // Simulate payment processing
-      setTimeout(() => {
-        setIsProcessing(false);
-        setFormSubmitted(true);
-      }, 1500);
+      processRazorpayPayment();
     }
   };
 
-  const formatCardNumber = (number: string) => {
-    if (!number) return "";
-    const cleaned = number.replace(/\s/g, "");
-    const groups = cleaned.match(/.{1,4}/g);
-    return groups ? groups.join(" ") : "";
-  };
   const formatAmount = (value: string) => {
     const numValue = parseFloat(value);
     if (isNaN(numValue)) return "₹0";
@@ -267,8 +242,7 @@ const DonationForm = () => {
   const resetForm = () => {
     setFormSubmitted(false);
     setFormStep(1);
-    setAmount("100");
-    setPaymentMethod("card");
+    setAmount("1000");
     setIsMonthly(false);
     setDonorInfo({
       firstName: "",
@@ -277,38 +251,39 @@ const DonationForm = () => {
       phone: "",
       message: ""
     });
-    setCardInfo({
-      cardNumber: "",
-      cardExpMonth: "",
-      cardExpYear: "",
-      cardCvv: ""
-    });
-    setUpiInfo({
-      upiId: ""
-    });
-    setBankingInfo({
-      bankName: ""
-    });
     setErrors({});
+    setPaymentResponse(null);
   };
 
   return (
     <section className="py-16 bg-black text-white" id="donate">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto bg-gray-900 rounded-none p-8 border-t-4 border-amber-400">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold mb-2">Make a Donation</h2>
+          <div className="mb-8 text-center">            <h2 className="text-3xl font-bold mb-2">Make a Donation</h2>
             <p className="text-gray-300">
               Your contribution helps us make a difference in the lives of those in need.
             </p>
-            {formStep > 1 && !formSubmitted && (
+            {!formSubmitted && (
+              <p className="text-amber-400 mt-2 text-sm">
+                {formStep === 1 && "Step 1: Select Amount"}
+                {formStep === 2 && "Step 2: Your Details"}
+                {formStep === 3 && "Step 3: Review & Pay"}
+              </p>
+            )}{formStep > 1 && !formSubmitted && (
               <div className="flex justify-center mt-6">
-                <div className="flex items-center w-full max-w-xs">
+                <div className="flex items-center w-full max-w-sm">
                   <div className="w-8 h-8 rounded-full bg-amber-400 text-black flex items-center justify-center">1</div>
                   <div className={`flex-1 h-1 mx-2 ${formStep > 1 ? "bg-amber-400" : "bg-gray-600"}`}></div>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep > 1 ? "bg-amber-400 text-black" : "bg-gray-700 text-gray-400"}`}>2</div>
                   <div className={`flex-1 h-1 mx-2 ${formStep > 2 ? "bg-amber-400" : "bg-gray-600"}`}></div>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep > 2 ? "bg-amber-400 text-black" : "bg-gray-700 text-gray-400"}`}>3</div>
+                </div>
+                <div className="hidden md:flex text-xs text-gray-400 absolute mt-10">
+                  <div className="w-8 text-center">Amount</div>
+                  <div className="flex-1"></div>
+                  <div className="w-8 text-center">Details</div>
+                  <div className="flex-1"></div>
+                  <div className="w-8 text-center mr-1">Review</div>
                 </div>
               </div>
             )}
@@ -334,7 +309,7 @@ const DonationForm = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Transaction ID:</span>
-                  <span className="text-white">TXN{Math.random().toString(36).substring(2, 10).toUpperCase()}</span>
+                  <span className="text-white">{paymentResponse?.id || "TXN" + Math.random().toString(36).substring(2, 10).toUpperCase()}</span>
                 </div>
               </div>
               <Button 
@@ -353,7 +328,8 @@ const DonationForm = () => {
                       Select Donation Amount
                     </Label>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                      {predefinedAmounts.map((value) => (                      <button
+                      {predefinedAmounts.map((value) => (
+                        <button
                           type="button"
                           key={value}
                           onClick={() => handleAmountClick(value)}
@@ -371,7 +347,8 @@ const DonationForm = () => {
                       <Label htmlFor="customAmount" className="text-sm mb-1 block">
                         Or enter a custom amount
                       </Label>
-                      <div className="relative">                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">₹</div>
+                      <div className="relative">
+                        <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">₹</div>
                         <Input
                           id="customAmount"
                           name="amount"
@@ -409,14 +386,12 @@ const DonationForm = () => {
                         Your donation will automatically repeat each month. You can cancel anytime.
                       </p>
                     )}
-                  </div>
-
-                  <Button 
+                  </div>                  <Button 
                     type="button"
                     onClick={nextStep}
                     className="w-full bg-amber-400 hover:bg-amber-500 text-black font-medium py-3 rounded-none flex items-center justify-center"
                   >
-                    Continue to Payment
+                    Next: Donor Information
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </>
@@ -487,9 +462,7 @@ const DonationForm = () => {
                         {errors.email}
                       </p>
                     )}
-                  </div>
-
-                  <div className="mb-6">
+                  </div>                  <div className="mb-6">
                     <Label htmlFor="phone" className="text-sm mb-1 block">
                       Phone Number (Optional)
                     </Label>
@@ -502,237 +475,38 @@ const DonationForm = () => {
                       onChange={handleDonorInfoChange}
                       className="bg-gray-800 border-gray-700 rounded-none focus:border-amber-400"
                     />
+                    {errors.phone && (
+                      <p className="text-red-400 text-sm mt-1 flex items-center">
+                        <AlertCircle className="h-4 w-4 mr-1" />
+                        {errors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mb-6">
+                    <Label htmlFor="message" className="text-sm mb-1 block">
+                      Message (Optional)
+                    </Label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      placeholder="Add a message with your donation"
+                      value={donorInfo.message}
+                      onChange={handleDonorInfoChange}
+                      className="bg-gray-800 border-gray-700 rounded-none focus:border-amber-400 min-h-[100px]"
+                    />
                   </div>
 
                   <div className="mb-6">
                     <Label className="text-sm mb-2 block">
                       Payment Method <span className="text-red-400">*</span>
                     </Label>
-                    <RadioGroup 
-                      defaultValue="card" 
-                      value={paymentMethod}
-                      onValueChange={setPaymentMethod}
-                      className="flex flex-col space-y-2"
-                    >
-                      <div className="flex items-center space-x-2 bg-gray-800 p-4 rounded-none border border-gray-700 hover:border-amber-400/50 cursor-pointer">
-                        <RadioGroupItem value="card" id="card" className="text-amber-400" />
-                        <Label htmlFor="card" className="flex items-center cursor-pointer">
-                          <CreditCard className="h-5 w-5 mr-2 text-gray-400" />
-                          Credit / Debit Card
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 bg-gray-800 p-4 rounded-none border border-gray-700 hover:border-amber-400/50 cursor-pointer">
-                        <RadioGroupItem value="upi" id="upi" className="text-amber-400" />
-                        <Label htmlFor="upi" className="flex items-center cursor-pointer">
-                          <Smartphone className="h-5 w-5 mr-2 text-gray-400" />
-                          UPI Payment
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2 bg-gray-800 p-4 rounded-none border border-gray-700 hover:border-amber-400/50 cursor-pointer">
-                        <RadioGroupItem value="netbanking" id="netbanking" className="text-amber-400" />
-                        <Label htmlFor="netbanking" className="flex items-center cursor-pointer">
-                          <Building className="h-5 w-5 mr-2 text-gray-400" />
-                          Net Banking
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  {paymentMethod === "card" && (
-                    <div className="mb-6 space-y-4">
-                      <div>
-                        <Label htmlFor="cardNumber" className="text-sm mb-1 block">
-                          Card Number <span className="text-red-400">*</span>
-                        </Label>
-                        <Input
-                          id="cardNumber"
-                          name="cardNumber"
-                          placeholder="1234 5678 9012 3456"
-                          value={cardInfo.cardNumber}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, '').substring(0, 16);
-                            setCardInfo({
-                              ...cardInfo,
-                              cardNumber: value
-                            });
-                            if (value) {
-                              setErrors({...errors, cardNumber: undefined});
-                            }
-                          }}
-                          className={`bg-gray-800 border-gray-700 rounded-none ${errors.cardNumber ? "border-red-400 focus:border-red-400" : "focus:border-amber-400"}`}
-                          required
-                        />
-                        {errors.cardNumber && (
-                          <p className="text-red-400 text-sm mt-1 flex items-center">
-                            <AlertCircle className="h-4 w-4 mr-1" />
-                            {errors.cardNumber}
-                          </p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <Label htmlFor="cardExpMonth" className="text-sm mb-1 block">
-                            Month <span className="text-red-400">*</span>
-                          </Label>
-                          <Select 
-                            value={cardInfo.cardExpMonth}
-                            onValueChange={(value) => handleSelectChange("cardExpMonth", value)}
-                          >
-                            <SelectTrigger className={`bg-gray-800 border-gray-700 rounded-none ${errors.cardExpMonth ? "border-red-400 focus:border-red-400" : "focus:border-amber-400"}`}>
-                              <SelectValue placeholder="MM" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 text-white border-gray-700">
-                              {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                                <SelectItem key={month} value={month.toString().padStart(2, "0")}>
-                                  {month.toString().padStart(2, "0")}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {errors.cardExpMonth && (
-                            <p className="text-red-400 text-sm mt-1 flex items-center">
-                              <AlertCircle className="h-4 w-4 mr-1" />
-                              {errors.cardExpMonth}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <Label htmlFor="cardExpYear" className="text-sm mb-1 block">
-                            Year <span className="text-red-400">*</span>
-                          </Label>
-                          <Select
-                            value={cardInfo.cardExpYear}
-                            onValueChange={(value) => handleSelectChange("cardExpYear", value)}
-                          >
-                            <SelectTrigger className={`bg-gray-800 border-gray-700 rounded-none ${errors.cardExpYear ? "border-red-400 focus:border-red-400" : "focus:border-amber-400"}`}>
-                              <SelectValue placeholder="YY" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-800 text-white border-gray-700">
-                              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((year) => (
-                                <SelectItem key={year} value={year.toString().substr(2)}>
-                                  {year}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {errors.cardExpYear && (
-                            <p className="text-red-400 text-sm mt-1 flex items-center">
-                              <AlertCircle className="h-4 w-4 mr-1" />
-                              {errors.cardExpYear}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <Label htmlFor="cardCvv" className="text-sm mb-1 block">
-                            CVV <span className="text-red-400">*</span>
-                          </Label>
-                          <Input
-                            id="cardCvv"
-                            name="cardCvv"
-                            placeholder="123"
-                            value={cardInfo.cardCvv}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/\D/g, '').substring(0, 4);
-                              setCardInfo({
-                                ...cardInfo,
-                                cardCvv: value
-                              });
-                              if (value) {
-                                setErrors({...errors, cardCvv: undefined});
-                              }
-                            }}
-                            className={`bg-gray-800 border-gray-700 rounded-none ${errors.cardCvv ? "border-red-400 focus:border-red-400" : "focus:border-amber-400"}`}
-                            required
-                          />
-                          {errors.cardCvv && (
-                            <p className="text-red-400 text-sm mt-1 flex items-center">
-                              <AlertCircle className="h-4 w-4 mr-1" />
-                              {errors.cardCvv}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentMethod === "upi" && (
-                    <div className="mb-6">
-                      <Label htmlFor="upiId" className="text-sm mb-1 block">
-                        UPI ID <span className="text-red-400">*</span>
-                      </Label>
-                      <Input
-                        id="upiId"
-                        placeholder="yourname@upi"
-                        value={upiInfo.upiId}
-                        onChange={(e) => {
-                          const value = e.target.value;
-                          setUpiInfo({
-                            ...upiInfo,
-                            upiId: value
-                          });
-                          if (value) {
-                            setErrors({...errors, upiId: undefined});
-                          }
-                        }}
-                        className={`bg-gray-800 border-gray-700 rounded-none ${errors.upiId ? "border-red-400 focus:border-red-400" : "focus:border-amber-400"}`}
-                        required
-                      />
-                      {errors.upiId && (
-                        <p className="text-red-400 text-sm mt-1 flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-1" />
-                          {errors.upiId}
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-400 mt-2">
-                        Enter your UPI ID (e.g., mobile@paytm, name@okhdfcbank, etc.)
+                    <div className="bg-gray-800 p-4 rounded-none border border-gray-700">
+                      <p className="text-gray-300 flex items-center">
+                        <Shield className="h-5 w-5 mr-2" />
+                        Razorpay (Secure Payment)
                       </p>
                     </div>
-                  )}
-
-                  {paymentMethod === "netbanking" && (
-                    <div className="mb-6">
-                      <Label htmlFor="bankName" className="text-sm mb-1 block">
-                        Select Your Bank <span className="text-red-400">*</span>
-                      </Label>
-                      <Select
-                        value={bankingInfo.bankName}
-                        onValueChange={(value) => handleSelectChange("bankName", value)}
-                      >
-                        <SelectTrigger className={`bg-gray-800 border-gray-700 rounded-none ${errors.bankName ? "border-red-400 focus:border-red-400" : "focus:border-amber-400"}`}>
-                          <SelectValue placeholder="Choose your bank" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-gray-800 text-white border-gray-700">
-                          {banks.map((bank) => (
-                            <SelectItem key={bank} value={bank}>
-                              {bank}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.bankName && (
-                        <p className="text-red-400 text-sm mt-1 flex items-center">
-                          <AlertCircle className="h-4 w-4 mr-1" />
-                          {errors.bankName}
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-400 mt-2">
-                        You will be redirected to your bank's secure payment portal
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mb-6">
-                    <Label htmlFor="message" className="text-sm mb-1 block">
-                      Leave a Message (Optional)
-                    </Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Your message to us..."
-                      value={donorInfo.message}
-                      onChange={handleDonorInfoChange}
-                      className="bg-gray-800 border-gray-700 rounded-none focus:border-amber-400"
-                    />
                   </div>
 
                   <div className="flex items-center justify-between mt-8">
@@ -789,14 +563,16 @@ const DonationForm = () => {
                           <span className="text-white">{donorInfo.phone}</span>
                         </div>
                       )}
-                      
-                      <div className="flex justify-between mb-2 pb-2 border-b border-gray-700">
+                        <div className="flex justify-between mb-2 pb-2 border-b border-gray-700">
                         <span className="text-gray-300">Payment Method:</span>
-                        <span className="text-white">
-                          {paymentMethod === "card" && "Credit/Debit Card"}
-                          {paymentMethod === "upi" && "UPI"}
-                          {paymentMethod === "netbanking" && bankingInfo.bankName}
+                        <span className="text-white flex items-center">
+                          Razorpay <img src="https://razorpay.com/favicon.png" alt="Razorpay" className="w-4 h-4 ml-2" /> (Secure Payment)
                         </span>
+                      </div>
+                      
+                      <div className="mt-4 p-3 bg-gray-900 text-xs text-gray-400">
+                        <p className="mb-1">You'll be redirected to Razorpay's secure payment page to complete your donation.</p>
+                        <p>Razorpay accepts Credit/Debit Cards, UPI, Netbanking, and Wallets.</p>
                       </div>
                       
                       {donorInfo.message && (
