@@ -108,7 +108,6 @@ const MultistepDonation = () => {
       form.handleSubmit(onSubmit)();
     }
   };
-
   // Handle form submission (final step)
   const onSubmit = async (values: DonationFormValues) => {
     setIsLoading(true);
@@ -136,43 +135,64 @@ const MultistepDonation = () => {
       
       // Handle payment based on type (one-time or recurring)
       if (values.isRecurring) {
-        // Initialize recurring SIP payment
-        await initializeRecurringPayment({
-          amount,
-          name: "Prachetas Foundation",
-          description: "Monthly SIP Donation",
-          prefill: {
-            name: values.fullName,
-            email: values.email,
-            contact: values.phone
-          },
-          notes,
-          handler: async (response) => {
-            handlePaymentSuccess(response, amount, donorInfo);
-          },
-          onDismiss: () => {
-            setIsLoading(false);
+        try {
+          // Initialize recurring SIP payment
+          console.log(`Initializing SIP payment for amount: ₹${amount}`);
+          
+          // Check if we're handling a valid SIP amount
+          const validSipAmounts = [100, 200, 500, 1000];
+          if (!validSipAmounts.includes(amount)) {
+            throw new Error(`Invalid SIP amount: ₹${amount}. Please select from the available options: ₹100, ₹200, ₹500, or ₹1000.`);
           }
-        });
+          
+          await initializeRecurringPayment({
+            amount,
+            name: "Prachetas Foundation",
+            description: "Monthly SIP Donation",
+            prefill: {
+              name: values.fullName,
+              email: values.email,
+              contact: values.phone
+            },
+            notes,
+            handler: async (response) => {
+              handlePaymentSuccess(response, amount, donorInfo);
+            },
+            onDismiss: () => {
+              setIsLoading(false);
+            }
+          });
+        } catch (sipError) {
+          console.error("SIP payment error:", sipError);
+          setPaymentError(`SIP payment setup failed: ${sipError instanceof Error ? sipError.message : "Unknown error"}`);
+          setIsLoading(false);
+        }
       } else {
-        // Initialize one-time payment
-        await initializePayment({
-          amount,
-          name: "Prachetas Foundation",
-          description: "One-time Donation",
-          prefill: {
-            name: values.fullName,
-            email: values.email,
-            contact: values.phone
-          },
-          notes,
-          handler: async (response) => {
-            handlePaymentSuccess(response, amount, donorInfo);
-          },
-          onDismiss: () => {
-            setIsLoading(false);
-          }
-        });
+        try {
+          // Initialize one-time payment
+          console.log(`Initializing one-time payment for amount: ₹${amount}`);
+          await initializePayment({
+            amount,
+            name: "Prachetas Foundation",
+            description: "One-time Donation",
+            prefill: {
+              name: values.fullName,
+              email: values.email,
+              contact: values.phone
+            },
+            notes,
+            handler: async (response) => {
+              handlePaymentSuccess(response, amount, donorInfo);
+            },
+            onDismiss: () => {
+              setIsLoading(false);
+            }
+          });
+        } catch (paymentError) {
+          console.error("One-time payment error:", paymentError);
+          setPaymentError(`Payment initialization failed: ${paymentError instanceof Error ? paymentError.message : "Unknown error"}`);
+          setIsLoading(false);
+        }
       }
     } catch (error) {
       console.error("Payment error:", error);

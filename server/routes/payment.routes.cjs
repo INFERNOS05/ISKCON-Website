@@ -43,24 +43,34 @@ router.post('/create-subscription', async (req, res) => {
 
     console.log('Creating subscription with options:', subscriptionOptions);
 
-    // Create the subscription using Razorpay API
-    const subscription = await razorpay.subscriptions.create(subscriptionOptions);
-    
-    console.log('Subscription created:', subscription);
-
-    return res.status(200).json({
-      success: true,
-      subscription: {
-        id: subscription.id,
-        planId: subscription.plan_id,
-        status: subscription.status,
-        customerName: customerDetails.name,
-        customerEmail: customerDetails.email
-      }
-    });
+    try {
+      // Create the subscription using Razorpay API
+      const subscription = await razorpay.subscriptions.create(subscriptionOptions);
+      
+      console.log('Subscription created:', subscription);
+  
+      return res.status(200).json({
+        success: true,
+        subscription: {
+          id: subscription.id,
+          planId: subscription.plan_id,
+          status: subscription.status,
+          customerName: customerDetails.name,
+          customerEmail: customerDetails.email
+        }
+      });
+    } catch (razorpayError) {
+      console.error('Razorpay API error:', razorpayError);
+      
+      return res.status(500).json({
+        success: false,
+        error: `Razorpay API error: ${razorpayError.message || 'Unknown error'}`
+      });
+    }
   } catch (error) {
     console.error('Subscription creation error:', error);
     
+    // Make sure we're sending a proper JSON response even when there's an error
     return res.status(500).json({
       success: false,
       error: error.message || 'Failed to create subscription'

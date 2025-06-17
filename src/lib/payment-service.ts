@@ -21,32 +21,36 @@ export interface PaymentVerificationResponse {
   message: string;
 }
 
-// Verify the payment with our backend server
+// Verify the payment with Supabase Edge Function
 export const verifyPaymentWithServer = async (
   data: PaymentVerificationRequest
 ): Promise<PaymentVerificationResponse> => {
   const isSubscription = !!data.subscriptionId;
   
   try {
-    console.log(`Verifying ${isSubscription ? 'subscription' : 'payment'} with server:`, data);
-      // API URL - Using proxy
+    console.log(`Verifying ${isSubscription ? 'subscription' : 'payment'} with Edge Function:`, data);
+    // API URL - Using proxy to Supabase Edge Function
     const apiUrl = '/api';
     
     // Choose the right endpoint based on payment type
     const endpoint = isSubscription ? 'verify-subscription' : 'verify-payment';
     
-    // Call our backend API to verify the payment/subscription
+    // Call our Edge Function to verify the payment/subscription
     const response = await fetch(`${apiUrl}/${endpoint}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        paymentId: data.paymentId,
-        orderId: data.orderId,
-        signature: data.signature,
-        subscriptionId: data.subscriptionId,
+        razorpay_payment_id: data.paymentId,
+        razorpay_order_id: data.orderId,
+        razorpay_signature: data.signature,
+        razorpay_subscription_id: data.subscriptionId,
         amount: data.amount,
         currency: data.currency,
-        donorInfo: data.donorInfo
+        customerDetails: {
+          name: data.donorInfo.name,
+          email: data.donorInfo.email,
+          phone: data.donorInfo.phone || ""
+        }
       })
     });
     

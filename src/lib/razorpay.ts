@@ -242,9 +242,8 @@ export const initializePayment = async ({
     }
     
     let orderId: string | undefined = undefined;
-    
-    try {
-      // Create an order through our backend API
+      try {
+      // Create an order through Supabase Edge Function
       const apiUrl = '/api';
       const orderResponse = await fetch(`${apiUrl}/create-order`, {
         method: 'POST',
@@ -252,11 +251,13 @@ export const initializePayment = async ({
         body: JSON.stringify({
           amount: finalAmount,
           currency,
+          receipt: `receipt_${Date.now()}`,
           notes: {
             ...notes,
             payment_type: "one_time",
             donor_name: prefill?.name,
-            donor_email: prefill?.email
+            donor_email: prefill?.email,
+            donor_contact: prefill?.contact
           }
         })
       });
@@ -268,7 +269,7 @@ export const initializePayment = async ({
       }
       
       // Get the order ID from the response
-      orderId = orderResult.order.id;
+      orderId = orderResult.order?.id;
       console.log("Order created successfully:", { orderId, order: orderResult.order });
     } catch (orderError) {
       console.error("Error creating order:", orderError);
@@ -345,13 +346,12 @@ export const getSubscriptionPlanId = async (
     if (isNaN(numAmount) || numAmount <= 0) {
       throw new Error(`Invalid subscription amount: ${amount}`);
     }
-    
-    console.log(`Finding plan ID for amount: ₹${numAmount}`);
-      // API URL - Using proxy
+      console.log(`Finding plan ID for amount: ₹${numAmount}`);
+      // API URL - Using proxy to Supabase Edge Function
     const apiUrl = '/api';
     
     try {
-      // Call our backend API to get the plan ID
+      // Call the Edge Function to get the plan ID
       const response = await fetch(`${apiUrl}/get-plan-id?amount=${numAmount}`);
       const result = await response.json();
       
@@ -359,7 +359,7 @@ export const getSubscriptionPlanId = async (
         throw new Error(result.error || "Failed to get plan ID");
       }
       
-      console.log(`API returned plan ID: ${result.planId} for amount: ₹${result.amount}`);
+      console.log(`Edge Function returned plan ID: ${result.planId} for amount: ₹${result.amount}`);
       
       return result.planId;
     } catch (apiError) {
@@ -467,20 +467,37 @@ export const prepareSipSubscription = async (
         ...notes
       }
     };
-    
-    console.log("Calling backend API to create subscription with data:", subscriptionData);
-      // API URL - Using proxy, so we can just use /api directly
+      console.log("Calling Edge Function to create subscription with data:", subscriptionData);
+      // API URL - Using proxy to Supabase Edge Function
     const apiUrl = '/api';
-    
-    try {
-      // Call our backend API to create the subscription
+      try {      // Call our Edge Function to create the subscription
       const response = await fetch(`${apiUrl}/create-subscription`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscriptionData)
+        body: JSON.stringify({
+          amount: parseInt(planId.split('_')[1]),
+          planId: planId,
+          customerDetails: {
+            name: customerDetails.name,
+            email: customerDetails.email,
+            contact: customerDetails.contact || ""
+          },
+          notes: subscriptionData.notes
+        })
       });
       
-      const result = await response.json();
+      let result;
+      
+      try {
+        const textResponse = await response.text(); // Get response as text first
+        console.log("Edge Function response text:", textResponse);
+        
+        // Try to parse the response as JSON
+        result = textResponse ? JSON.parse(textResponse) : {};
+      } catch (parseError) {
+        console.error("Error parsing Edge Function response:", parseError);
+        throw new Error(`Invalid API response: ${parseError.message}`);
+      }
       
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to create subscription");
@@ -490,7 +507,7 @@ export const prepareSipSubscription = async (
       
       return {
         id: result.subscription.id,
-        planId: result.subscription.planId,
+        planId: planId,
         customerName: customerDetails.name,
         customerEmail: customerDetails.email,
         status: result.subscription.status
