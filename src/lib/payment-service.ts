@@ -31,12 +31,9 @@ export const verifyPaymentWithServer = async (
     console.log(`Verifying ${isSubscription ? 'subscription' : 'payment'} with Edge Function:`, data);
     // API URL - Using proxy to Supabase Edge Function
     const apiUrl = '/api';
-    
-    // Choose the right endpoint based on payment type
-    const endpoint = isSubscription ? 'verify-subscription' : 'verify-payment';
-    
-    // Call our Edge Function to verify the payment/subscription
-    const response = await fetch(`${apiUrl}/${endpoint}`, {
+      // Call our Edge Function to verify the payment/subscription
+    // The /api prefix will be rewritten to /quick-api by the proxy
+    const response = await fetch(`${apiUrl}/${isSubscription ? 'verify-subscription' : 'verify-payment'}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

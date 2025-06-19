@@ -34,43 +34,53 @@ const TestimonialsSection = () => {
       avatar: "/placeholder.svg"
     }
   ];
+
   return (
-    <section className="py-16 bg-gray-900 text-white">
+    <section className="py-16 bg-[#2C5530]">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Making A Difference</h2>
-          <p className="text-gray-400">
+          <h2 className="text-4xl font-bold mb-4 text-white">Making A Difference</h2>
+          <p className="text-gray-100 text-lg">
             Hear stories from the communities we serve and those who help us fulfill our mission
           </p>
         </div>
 
-        <Carousel className="w-full max-w-5xl mx-auto">
+        <Carousel 
+          className="w-full max-w-5xl mx-auto"
+          opts={{
+            align: "start",
+            loop: true,
+          }}
+        >
           <CarouselContent>
             {testimonials.map((testimonial) => (
-              <CarouselItem key={testimonial.id} className="md:basis-1/2 lg:basis-1/2">
-                <Card className="border border-gray-800 bg-black h-full">
-                  <CardContent className="p-6 flex flex-col h-full">
-                    <Quote className="h-8 w-8 text-yellow-400 mb-4" />
-                    <p className="text-gray-300 mb-6 flex-grow">"{testimonial.quote}"</p>
-                    <div className="flex items-center">
-                      <Avatar className="h-10 w-10 mr-4">
-                        <AvatarImage src={testimonial.avatar} />
-                        <AvatarFallback className="bg-yellow-100 text-yellow-800">
+              <CarouselItem key={testimonial.id} className="md:basis-1/2 lg:basis-1/2 pl-6">
+                <Card className="bg-white/10 backdrop-blur-sm border-none">
+                  <CardContent className="p-6">
+                    <Quote className="h-8 w-8 text-[#FFD700] mb-4" />
+                    <blockquote className="text-white text-lg mb-6 leading-relaxed">
+                      "{testimonial.quote}"
+                    </blockquote>
+                    <div className="flex items-center mt-4">
+                      <Avatar className="h-12 w-12 border-2 border-[#D86C1F]">
+                        <AvatarImage src={testimonial.avatar} alt={testimonial.name} />
+                        <AvatarFallback className="bg-[#D86C1F] text-white">
                           {testimonial.name.split(' ').map(n => n[0]).join('')}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <p className="font-semibold">{testimonial.name}</p>
-                        <p className="text-sm text-gray-500">{testimonial.title}</p>
+                      <div className="ml-4">
+                        <div className="font-semibold text-[#FFD700]">{testimonial.name}</div>
+                        <div className="text-gray-100 text-sm">{testimonial.title}</div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </CarouselItem>
             ))}
-          </CarouselContent>          <div className="flex justify-center gap-2 mt-8">
-            <CarouselPrevious className="static translate-y-0 mx-2 bg-gray-800 hover:bg-yellow-400 hover:text-black border-gray-700" />
-            <CarouselNext className="static translate-y-0 mx-2 bg-gray-800 hover:bg-yellow-400 hover:text-black border-gray-700" />
+          </CarouselContent>
+          <div className="hidden md:flex justify-center mt-8 gap-4">
+            <CarouselPrevious className="relative bg-[#D86C1F] hover:bg-[#C35A15] border-none text-white" />
+            <CarouselNext className="relative bg-[#D86C1F] hover:bg-[#C35A15] border-none text-white" />
           </div>
         </Carousel>
       </div>
