@@ -9,12 +9,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: "#hero", label: "Home" },
-  { href: "#about", label: "About Us" },
-  { href: "#programs", label: "Our Programs" },
-  { href: "#impact", label: "Our Impact" },
-  { href: "#get-involved", label: "Get Involved" },
-  { href: "#contact", label: "Contact" },
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About Us" },
+  { href: "/programs", label: "Our Programs" },
+  { href: "/impact", label: "Our Impact" },
+  { href: "/get-involved", label: "Get Involved" },
+  { href: "/contact", label: "Contact" },
 ];
 
 const Header = () => {
@@ -37,18 +37,16 @@ const Header = () => {
             <span className="text-[#FFD700] text-sm tracking-wider font-medium">
               WHERE COMPASSION MEETS ACTION
             </span>
-          </Link>
-
-          {/* Desktop Navigation */}
+          </Link>          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.href}
-                href={item.href}
+                to={item.href}
                 className="text-white hover:text-[#FFD700] transition-colors font-medium"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
             <Button
               asChild
@@ -70,20 +68,18 @@ const Header = () => {
               <Menu className="h-6 w-6" />
             )}
           </button>
-        </div>
-
-        {/* Mobile Navigation */}
+        </div>        {/* Mobile Navigation */}
         {isMenuOpen && (
           <nav className="md:hidden mt-4 space-y-4 pb-4">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.href}
-                href={item.href}
+                to={item.href}
                 className="block text-white hover:text-[#FFD700] transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
             <Button
               asChild
