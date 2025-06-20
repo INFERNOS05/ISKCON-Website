@@ -5,6 +5,13 @@
   publish = "dist"
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "18"
+  # ImageKit environment variables (these will be overridden by Netlify UI settings)
+  IMAGEKIT_PUBLIC_KEY = "public_Q3GcFOuCqO6UaNe5E6hOc8Lz8XY="
+  IMAGEKIT_PRIVATE_KEY = "private_2RRGIB5sFCC+wg8kP8wxotOKCA0="
+  IMAGEKIT_URL_ENDPOINT = "https://ik.imagekit.io/erafq13a8"
+
 [dev]
   framework = "#custom"
   command = "vite"

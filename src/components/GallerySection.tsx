@@ -1,114 +1,163 @@
+import { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { type GalleryImage, GALLERY_CATEGORIES } from "@/lib/imagekit-config";
+import { GalleryGrid } from "@/features/gallery/components/GalleryGrid";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useImageKit } from "@/features/gallery/hooks/useImageKit";
 
 const GallerySection = () => {
-  const categories = [
-    { id: "all", label: "All Projects" },
-    { id: "education", label: "Education" },
-    { id: "healthcare", label: "Healthcare" },
-    { id: "community", label: "Community" },
-  ];
+  const [images, setImages] = useState<Record<string, GalleryImage[]>>({
+    all: [],
+    education: [],
+    healthcare: [],
+    community: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  
+  // Use the ImageKit hook
+  const { loading: ikLoading, error: ikError } = useImageKit();
 
-  const gallery = [
-    {
-      id: 1,
-      title: "Educational Support in Rural Schools",
-      description: "Providing quality education and resources to rural communities",
-      image: "/placeholder.svg",
-      categories: ["education", "all"]
-    },
-    {
-      id: 2,
-      title: "Scholarship Program for Underprivileged Children",
-      description: "Creating opportunities through education",
-      image: "/placeholder.svg",
-      categories: ["education", "all"]
-    },
-    {
-      id: 3,
-      title: "Medical Camp in Remote Villages",
-      description: "Bringing healthcare to underserved communities",
-      image: "/placeholder.svg",
-      categories: ["healthcare", "all"]
-    },
-    {
-      id: 4,
-      title: "Women Empowerment Initiative",
-      description: "Supporting and empowering women in our communities",
-      image: "/placeholder.svg",
-      categories: ["community", "all"]
-    },
-    {
-      id: 5,
-      title: "Vocational Training for Youth",
-      description: "Building skills for a better future",
-      image: "/placeholder.svg",
-      categories: ["education", "community", "all"]
-    },
-    {
-      id: 6,
-      title: "Health Awareness Drive",
-      description: "Promoting health education and preventive care",
-      image: "/placeholder.svg",
-      categories: ["healthcare", "all"]
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('[Gallery] Loading images for category:', selectedCategory);
+        
+        const category = GALLERY_CATEGORIES.find(cat => cat.id === selectedCategory);
+        if (!category) {
+          throw new Error(`Invalid category: ${selectedCategory}`);
+        }
+
+        // Fetch images from our backend function
+        const response = await fetch(`/api/list-images?category=${category.id}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch images: ${errorText}`);
+        }
+
+        const loadedImages = await response.json();
+        console.log(`[Gallery] Loaded ${loadedImages.length} images for ${category.category}`);
+        
+        setImages(current => ({
+          ...current,
+          [selectedCategory]: loadedImages
+        }));
+      } catch (err) {
+        console.error('[Gallery] Error loading images:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load gallery images');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!ikLoading && !ikError) {
+      loadImages();
     }
-  ];
+  }, [selectedCategory, ikLoading, ikError]);
+
+  const handleRetry = async () => {
+    if (ikError) {
+      // Refresh the page to reinitialize ImageKit
+      window.location.reload();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const category = GALLERY_CATEGORIES.find(cat => cat.id === selectedCategory);
+      if (!category) return;
+
+      const response = await fetch(`/api/list-images?category=${category.id}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch images: ${errorText}`);
+      }
+
+      const loadedImages = await response.json();
+      setImages(current => ({
+        ...current,
+        [selectedCategory]: loadedImages
+      }));
+    } catch (err) {
+      console.error('[Gallery] Retry error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load images');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Show ImageKit initialization error if any
+  if (ikError) {
+    return (
+      <section className="py-16 px-4 md:px-8 bg-gray-50">
+        <div className="container mx-auto">
+          <Alert variant="destructive">
+            <AlertDescription>
+              Failed to initialize image service: {ikError}
+              <button
+                onClick={() => window.location.reload()}
+                className="ml-4 text-sm underline hover:no-underline"
+              >
+                Retry
+              </button>
+            </AlertDescription>
+          </Alert>
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="py-16 bg-[#F5F1E8]">
-      <div className="container mx-auto px-4">
-        <div className="max-w-3xl mx-auto text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-[#2C5530]">Our Impact Gallery</h2>
-          <p className="text-[#333333] text-lg mb-8">
-            Explore our initiatives that are transforming lives across communities
-          </p>
-        </div>
+    <section className="py-16 px-4 md:px-8 bg-gray-50">
+      <div className="container mx-auto">
+        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
+          Our Impact Gallery
+        </h2>
 
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="flex justify-center mb-8 bg-transparent border-b border-gray-200">
-            {categories.map((category) => (
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>
+              {error}
+              <button
+                onClick={handleRetry}
+                className="ml-4 text-sm underline hover:no-underline"
+              >
+                Try Again
+              </button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        <Tabs 
+          defaultValue="all" 
+          className="w-full"
+          onValueChange={setSelectedCategory}
+        >
+          <TabsList className="flex justify-center mb-8">
+            {GALLERY_CATEGORIES.map((category) => (
               <TabsTrigger
                 key={category.id}
                 value={category.id}
-                className="px-6 py-3 text-lg font-medium data-[state=active]:text-[#D86C1F] data-[state=active]:border-b-2 data-[state=active]:border-[#D86C1F] transition-colors"
+                className="px-4 py-2"
               >
                 {category.label}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          {categories.map((category) => (
+          {GALLERY_CATEGORIES.map((category) => (
             <TabsContent key={category.id} value={category.id}>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {gallery
-                  .filter((item) => item.categories.includes(category.id))
-                  .map((item) => (
-                    <div
-                      key={item.id}
-                      className="group relative overflow-hidden rounded-lg shadow-lg bg-white hover:shadow-xl transition-shadow"
-                    >
-                      <div className="aspect-w-16 aspect-h-9">
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-                        />
-                      </div>
-                      <div className="p-6">
-                        <h3 className="text-xl font-semibold mb-2 text-[#2C5530]">
-                          {item.title}
-                        </h3>
-                        <p className="text-[#333333]">{item.description}</p>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="absolute bottom-0 left-0 right-0 p-6">
-                          <button className="w-full bg-[#D86C1F] text-white py-2 rounded-md hover:bg-[#C35A15] transition-colors">
-                            Learn More
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
+              <GalleryGrid 
+                images={images[category.id] || []} 
+                loading={loading || ikLoading} 
+                error={error} 
+                onRetry={handleRetry}
+              />
             </TabsContent>
           ))}
         </Tabs>

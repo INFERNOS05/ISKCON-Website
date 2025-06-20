@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "netlify dev",
-    "build": "tsc && vite build",
+    "build": "npm install --prefix netlify/functions && tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "netlify:dev": "netlify dev",
@@ -52,6 +52,7 @@
     "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.3.0",
     "express": "^4.18.2",
+    "imagekit-javascript": "^4.0.1",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",

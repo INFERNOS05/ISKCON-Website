@@ -1,0 +1,8 @@
+{
+  "name": "evergreen-compassion-functions",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "imagekit": "^4.1.4"
+  }
+}
