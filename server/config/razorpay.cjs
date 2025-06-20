@@ -4,11 +4,27 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_5Gr07DWc1NdDc9',
-  key_secret: process.env.RAZORPAY_SECRET_KEY || process.env.RAZORPAY_KEY_SECRET || 'qm2Ze9AEhjKjBr0e1tKArHYr'
+// Validate Razorpay credentials
+const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_5Gr07DWc1NdDc9';
+const key_secret = process.env.RAZORPAY_SECRET_KEY || process.env.RAZORPAY_KEY_SECRET || 'qm2Ze9AEhjKjBr0e1tKArHYr';
+
+console.log('🔑 Initializing Razorpay with:', {
+  key_id: `${key_id.substring(0, 8)}...`,
+  key_secret: '****'
 });
+
+// Initialize Razorpay with validation
+let razorpay;
+try {
+  razorpay = new Razorpay({
+    key_id,
+    key_secret
+  });
+  console.log('✅ Razorpay initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize Razorpay:', error);
+  throw new Error('Razorpay initialization failed: ' + error.message);
+}
 
 // Plan IDs for different SIP amounts (monthly subscription plans)
 const PLAN_IDS = {
@@ -17,6 +33,23 @@ const PLAN_IDS = {
   500: "plan_QhlbDG7RIgx5Ov", 
   1000: "plan_QhlcT03kYhZf6v"
 };
+
+// Verify plans exist
+(async () => {
+  try {
+    console.log('🔍 Verifying subscription plans...');
+    for (const [amount, planId] of Object.entries(PLAN_IDS)) {
+      try {
+        const plan = await razorpay.plans.fetch(planId);
+        console.log(`✅ Verified plan for ₹${amount}: ${planId}`);
+      } catch (error) {
+        console.error(`❌ Failed to verify plan for ₹${amount}:`, error.message);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error verifying plans:', error);
+  }
+})();
 
 module.exports = {
   razorpay,

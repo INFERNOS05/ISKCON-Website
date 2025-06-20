@@ -7,14 +7,36 @@ dotenv.config();
 
 const router = express.Router();
 
+// Debug endpoint to test Razorpay connection
+router.get('/test-razorpay', async (req, res) => {
+  try {
+    const items = await razorpay.plans.all();
+    res.json({ success: true, plans: items });
+  } catch (error) {
+    console.error('Razorpay connection test failed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Razorpay connection failed',
+      details: error.message 
+    });
+  }
+});
+
 // Route to create a subscription
 router.post('/create-subscription', async (req, res) => {
   try {
     const { planId, customerDetails, notes = {} } = req.body;
     
-    console.log('Creating subscription with:', { planId, customerDetails });
+    console.log('📍 Starting subscription creation process');
+    console.log('Received request data:', { 
+      planId, 
+      customerDetails, 
+      notes 
+    });
     
+    // Validate inputs
     if (!planId) {
+      console.error('❌ Missing plan ID');
       return res.status(400).json({ 
         success: false,
         error: 'Plan ID is required' 
@@ -22,9 +44,28 @@ router.post('/create-subscription', async (req, res) => {
     }
 
     if (!customerDetails || !customerDetails.name || !customerDetails.email) {
+      console.error('❌ Missing customer details');
       return res.status(400).json({ 
         success: false, 
         error: 'Customer name and email are required' 
+      });
+    }
+
+    // Verify plan exists in Razorpay
+    console.log('🔍 Verifying plan in Razorpay:', planId);
+    try {
+      const plan = await razorpay.plans.fetch(planId);
+      console.log('✅ Plan verified:', {
+        id: plan.id,
+        amount: plan.item.amount,
+        currency: plan.item.currency
+      });
+    } catch (planError) {
+      console.error('❌ Plan verification failed:', planError);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid plan ID. Please check the subscription amount.',
+        details: planError.message
       });
     }
 
@@ -41,39 +82,44 @@ router.post('/create-subscription', async (req, res) => {
       }
     };
 
-    console.log('Creating subscription with options:', subscriptionOptions);
+    console.log('📝 Creating subscription with options:', JSON.stringify(subscriptionOptions, null, 2));
 
     try {
       // Create the subscription using Razorpay API
       const subscription = await razorpay.subscriptions.create(subscriptionOptions);
-      
-      console.log('Subscription created:', subscription);
-  
-      return res.status(200).json({
-        success: true,
-        subscription: {
-          id: subscription.id,
-          planId: subscription.plan_id,
-          status: subscription.status,
-          customerName: customerDetails.name,
-          customerEmail: customerDetails.email
-        }
+      console.log('✅ Subscription created successfully:', {
+        id: subscription.id,
+        status: subscription.status,
+        planId: subscription.plan_id
       });
-    } catch (razorpayError) {
-      console.error('Razorpay API error:', razorpayError);
       
-      return res.status(500).json({
+      if (subscription.status === 'created') {
+        return res.json({
+          success: true,
+          subscription: {
+            id: subscription.id,
+            status: subscription.status,
+            planId: subscription.plan_id
+          }
+        });
+      } else {
+        console.error('❌ Unexpected subscription status:', subscription.status);
+        throw new Error(`Unexpected subscription status: ${subscription.status}`);
+      }
+    } catch (subscriptionError) {
+      console.error('❌ Subscription creation failed:', subscriptionError);
+      return res.status(400).json({
         success: false,
-        error: `Razorpay API error: ${razorpayError.message || 'Unknown error'}`
+        error: 'Failed to create subscription',
+        details: subscriptionError.message
       });
     }
   } catch (error) {
-    console.error('Subscription creation error:', error);
-    
-    // Make sure we're sending a proper JSON response even when there's an error
+    console.error('❌ Server error in /create-subscription:', error);
     return res.status(500).json({
       success: false,
-      error: error.message || 'Failed to create subscription'
+      error: 'Internal server error',
+      details: error.message
     });
   }
 });
@@ -114,38 +160,46 @@ router.post('/verify-subscription', async (req, res) => {
   }
 });
 
-// Route to verify one-time payment
+// Route to verify payment
 router.post('/verify-payment', async (req, res) => {
   try {
-    const { paymentId, orderId, signature } = req.body;
+    const { 
+      razorpay_payment_id, 
+      razorpay_subscription_id,
+      razorpay_signature 
+    } = req.body;
 
-    console.log('Verifying payment:', { paymentId, orderId, signature });
+    console.log('Verifying payment:', {
+      razorpay_payment_id,
+      razorpay_subscription_id,
+      razorpay_signature
+    });
 
-    if (!paymentId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Payment ID is required' 
+    // Verify the payment signature
+    const generated_signature = razorpay.webhooks.generateSignature(
+      `${razorpay_payment_id}|${razorpay_subscription_id}`,
+      process.env.RAZORPAY_WEBHOOK_SECRET || 'your_webhook_secret'
+    );
+
+    if (generated_signature === razorpay_signature) {
+      console.log('Payment verified successfully');
+      return res.json({
+        success: true,
+        message: 'Payment verified successfully'
+      });
+    } else {
+      console.error('Payment verification failed: Invalid signature');
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid payment signature'
       });
     }
-
-    // In production, verify the signature with Razorpay
-
-    // Get payment details from Razorpay
-    const payment = await razorpay.payments.fetch(paymentId);
-    console.log('Payment details:', payment);
-
-    return res.status(200).json({
-      success: true,
-      transactionId: paymentId,
-      status: payment.status,
-      message: 'Payment verified successfully'
-    });
   } catch (error) {
     console.error('Payment verification error:', error);
-    
     return res.status(500).json({
       success: false,
-      error: error.message || 'Failed to verify payment'
+      error: 'Payment verification failed',
+      details: error.message
     });
   }
 });

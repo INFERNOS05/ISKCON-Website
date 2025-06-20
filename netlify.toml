@@ -1,25 +1,23 @@
 # Netlify configuration file
 
-# The command that builds your site
 [build]
   command = "npm run build"
   publish = "dist"
-  
-# Environment variables needed for the build
-[build.environment]
-  VITE_API_BASE_URL = "/api"
-  
-# Redirects and proxy rules
+  functions = "netlify/functions"
+
+[dev]
+  framework = "#custom"
+  command = "vite"
+  port = 4000
+  targetPort = 5173
+  publish = "dist"
+  autoLaunch = true
+  functionsPort = 4001
+
 [[redirects]]
-  # Proxy API requests to your Supabase Edge Function
   from = "/api/*"
-  to = "https://prcdxmmidbgfglhuoycm.supabase.co/functions/v1/quick-api/:splat"
+  to = "/.netlify/functions/:splat"
   status = 200
-  force = true
-  # Add headers to authenticate with Supabase
-  [redirects.headers]
-    Content-Type = "application/json"
-    Accept = "application/json"
 
 # SPA fallback
 [[redirects]]
