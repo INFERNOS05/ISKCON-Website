@@ -341,80 +341,57 @@ export const prepareSipSubscription = async (
     // Prepare subscription data for the API call
     const subscriptionData = {
       planId,
-      customerDetails,
+      customerDetails: {
+        name: customerDetails.name,
+        email: customerDetails.email,
+        contact: customerDetails.contact || ""
+      },
       notes: {
-        "donor_name": customerDetails.name,
-        "donor_email": customerDetails.email,
-        "donation_type": "monthly_sip",
+        donor_name: customerDetails.name,
+        donor_email: customerDetails.email,
+        donation_type: "monthly_sip",
         ...notes
       }
     };
-      console.log("Calling Edge Function to create subscription with data:", subscriptionData);
-      // API URL - Using proxy to Supabase Edge Function
-    const apiUrl = '/api';
-      try {      // Call our Edge Function to create the subscription
-      const response = await fetch(`${apiUrl}/create-subscription`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: parseInt(planId.split('_')[1]),
-          planId: planId,
-          customerDetails: {
-            name: customerDetails.name,
-            email: customerDetails.email,
-            contact: customerDetails.contact || ""
-          },
-          notes: subscriptionData.notes
-        })
-      });
-      
-      let result;
-      
-      try {
-        const textResponse = await response.text(); // Get response as text first
-        console.log("Edge Function response text:", textResponse);
-        
-        // Try to parse the response as JSON
-        result = textResponse ? JSON.parse(textResponse) : {};
-      } catch (parseError) {
-        console.error("Error parsing Edge Function response:", parseError);
-        throw new Error(`Invalid API response: ${parseError.message}`);
-      }
-      
-      if (!response.ok || !result.success) {
-        throw new Error(result.error || "Failed to create subscription");
-      }
-      
-      console.log("Subscription created successfully:", result.subscription);
-      
-      return {
-        id: result.subscription.id,
-        planId: planId,
-        customerName: customerDetails.name,
-        customerEmail: customerDetails.email,
-        status: result.subscription.status
-      };
-    } catch (apiError) {
-      console.error("API error creating subscription:", apiError);
-      
-      // For development/testing - fallback to dummy subscription ID if server is not available
-      // In production, you would remove this fallback
-      if (process.env.NODE_ENV !== 'production') {
-        console.warn("Using fallback test subscription ID due to API error");
-        return {
-          id: `sub_${Date.now().toString().substring(0, 10)}`,
-          planId,
-          customerName: customerDetails.name,
-          customerEmail: customerDetails.email,
-          status: "created"
-        };
-      } else {
-        throw apiError;
-      }
+
+    console.log("Creating subscription with data:", subscriptionData);
+    
+    const response = await fetch(`${API_URL}/create-subscription`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subscriptionData)
+    });
+    
+    let result;
+    const textResponse = await response.text();
+    console.log("Create subscription response text:", textResponse);
+    
+    try {
+      // Try to parse the response as JSON
+      result = textResponse ? JSON.parse(textResponse) : {};
+    } catch (parseError) {
+      console.error("Error parsing API response:", parseError);
+      throw new Error(`Invalid API response: ${parseError.message}`);
     }
+    
+    if (!response.ok || !result.success) {
+      throw new Error(result.error || "Failed to create subscription");
+    }
+    
+    console.log("Subscription created successfully:", result.subscription);
+    
+    return {
+      id: result.subscription.id,
+      planId: planId,
+      customerName: customerDetails.name,
+      customerEmail: customerDetails.email,
+      status: result.subscription.status
+    };
   } catch (error) {
-    console.error("Error preparing subscription:", error);
-    throw new Error("Failed to prepare subscription: " + (error instanceof Error ? error.message : "Unknown error"));
+    console.error("Error creating subscription:", error);
+    throw error instanceof Error 
+      ? error 
+      : new Error("Failed to create subscription: Unknown error");
   }
 };
 

@@ -35,6 +35,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    console.log('Creating subscription with request body:', event.body);
     const { planId, customerDetails, notes = {} } = JSON.parse(event.body);
 
     if (!planId) {
@@ -59,7 +60,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const subscription = await razorpay.subscriptions.create({
+    console.log('Creating Razorpay subscription with:', {
       plan_id: planId,
       customer_notify: 1,
       notes: {
@@ -70,6 +71,20 @@ exports.handler = async (event, context) => {
       }
     });
 
+    const subscription = await razorpay.subscriptions.create({
+      plan_id: planId,
+      customer_notify: 1,
+      total_count: 12, // 12 months subscription
+      notes: {
+        donor_name: customerDetails.name,
+        donor_email: customerDetails.email,
+        donation_type: 'monthly_sip',
+        ...notes
+      }
+    });
+
+    console.log('Subscription created successfully:', subscription);
+
     return {
       statusCode: 200,
       headers,
@@ -79,12 +94,13 @@ exports.handler = async (event, context) => {
       })
     };
   } catch (error) {
+    console.error('Error creating subscription:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({
         success: false,
-        error: error.message
+        error: error.message || 'Failed to create subscription'
       })
     };
   }
