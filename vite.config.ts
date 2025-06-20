@@ -4,13 +4,12 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({  
-  server: {
+export default defineConfig(({ mode }) => ({    server: {
     host: "::",
-    port: 8081,
+    port: 3001,
     proxy: {
       '/api': {
-        target: 'http://localhost:8082', // Our local Node.js server
+        target: 'http://localhost:3002', // Netlify Functions port
         changeOrigin: true
       }
     }

@@ -8,11 +8,11 @@
 [dev]
   framework = "#custom"
   command = "vite"
-  port = 4000
-  targetPort = 5173
+  port = 3000
+  targetPort = 3001
   publish = "dist"
   autoLaunch = true
-  functionsPort = 4001
+  functionsPort = 3002
 
 [[redirects]]
   from = "/api/*"

@@ -16,10 +16,10 @@ export const RAZORPAY_KEY_ID = "rzp_test_5Gr07DWc1NdDc9";
 
 // Plan IDs for different SIP amounts (monthly subscription plans)
 export const PLAN_IDS = {
-  100: "plan_Qh8r9nUPEt3Dbv",
-  200: "plan_Qh8s8EzXQr7DXu", 
-  500: "plan_QhlbDG7RIgx5Ov", 
-  1000: "plan_QhlcT03kYhZf6v"
+  100: "plan_Qh8r9nUPEt3Dbv", // ₹100/month
+  200: "plan_Qh8s8EzXQr7DXu", // ₹200/month
+  500: "plan_QhlbDG7RIgx5Ov", // ₹500/month
+  1000: "plan_QhlcT03kYhZf6v" // ₹1000/month
 } as const;
 
 interface RazorpayOptions {
@@ -325,10 +325,26 @@ export const prepareSipSubscription = async (
   customerEmail: string,
   status?: string
 }> => {
-  console.log("Preparing SIP subscription with plan:", planId);
-  console.log("Customer details:", customerDetails);
+  console.log("[SIP] Starting subscription creation with plan:", planId);
+  console.log("[SIP] Customer details:", customerDetails);
 
   try {
+    // Check Razorpay configuration first
+    console.log("[SIP] Checking Razorpay configuration...");
+    const configCheck = await fetch(`${API_URL}/check-razorpay`, {
+      method: 'GET',
+      headers: { 
+        'Accept': 'application/json'
+      }
+    });
+    
+    const configResult = await configCheck.json();
+    console.log("[SIP] Configuration check result:", configResult);
+    
+    if (!configResult.success) {
+      throw new Error(`Razorpay configuration error: ${configResult.message}`);
+    }
+
     // Validate inputs
     if (!planId) {
       throw new Error("Plan ID is required");
@@ -354,31 +370,45 @@ export const prepareSipSubscription = async (
       }
     };
 
-    console.log("Creating subscription with data:", subscriptionData);
+    console.log("[SIP] Creating subscription with data:", JSON.stringify(subscriptionData, null, 2));
     
     const response = await fetch(`${API_URL}/create-subscription`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(subscriptionData)
     });
     
-    let result;
-    const textResponse = await response.text();
-    console.log("Create subscription response text:", textResponse);
+    const contentType = response.headers.get("content-type");
+    console.log("[SIP] Response content type:", contentType);
+    console.log("[SIP] Response status:", response.status);
     
+    const textResponse = await response.text();
+    console.log("[SIP] Raw response:", textResponse);
+    
+    let result;
     try {
       // Try to parse the response as JSON
       result = textResponse ? JSON.parse(textResponse) : {};
+      console.log("[SIP] Parsed response:", result);
     } catch (parseError) {
-      console.error("Error parsing API response:", parseError);
-      throw new Error(`Invalid API response: ${parseError.message}`);
+      console.error("[SIP] Error parsing API response:", parseError);
+      throw new Error(`Invalid API response: ${textResponse}`);
     }
     
     if (!response.ok || !result.success) {
+      console.error("[SIP] Error in response:", result);
       throw new Error(result.error || "Failed to create subscription");
     }
     
-    console.log("Subscription created successfully:", result.subscription);
+    if (!result.subscription?.id) {
+      console.error("[SIP] Missing subscription ID in response:", result);
+      throw new Error("Invalid subscription response from server");
+    }
+    
+    console.log("[SIP] Subscription created successfully:", result.subscription);
     
     return {
       id: result.subscription.id,
@@ -388,10 +418,12 @@ export const prepareSipSubscription = async (
       status: result.subscription.status
     };
   } catch (error) {
-    console.error("Error creating subscription:", error);
-    throw error instanceof Error 
-      ? error 
-      : new Error("Failed to create subscription: Unknown error");
+    console.error("[SIP] Error creating subscription:", error);
+    if (error instanceof Error) {
+      throw new Error(`Failed to create subscription: ${error.message}`);
+    } else {
+      throw new Error("Failed to create subscription: Unknown error");
+    }
   }
 };
 
