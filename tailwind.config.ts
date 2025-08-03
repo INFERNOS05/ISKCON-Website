@@ -19,6 +19,16 @@ export default {
 		},
 		extend: {
 			colors: {
+				// Black and Yellow theme colors
+				'prachetas': {
+					black: '#000000',
+					'dark-gray': '#1a1a1a',
+					'medium-gray': '#333333',
+					'light-gray': '#666666',
+					yellow: '#FFD700',
+					'bright-yellow': '#FFC107',
+					'golden': '#FFB300',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

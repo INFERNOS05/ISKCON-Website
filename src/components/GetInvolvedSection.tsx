@@ -31,11 +31,11 @@ const GetInvolvedSection = () => {
   ];
 
   return (
-    <section className="py-16 bg-[#F5F1E8]">
+    <section className="py-16 bg-prachetas-black">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4 text-[#2C5530]">Join Our Impact Story</h2>
-          <p className="text-[#333333] text-lg">
+          <h2 className="text-4xl font-bold mb-4 text-prachetas-yellow">Join Our Impact Story</h2>
+          <p className="text-gray-300 text-lg">
             Be part of our journey to create a better world through various ways of engagement
           </p>
         </div>
@@ -44,20 +44,20 @@ const GetInvolvedSection = () => {
           {involvementOptions.map((option) => (
             <div 
               key={option.id} 
-              className="bg-white rounded-lg p-8 text-center shadow-lg hover:shadow-xl transition-all transform hover:scale-105 duration-300"
+              className="bg-white/10 backdrop-blur-sm rounded-lg p-8 text-center shadow-lg hover:shadow-xl transition-all transform hover:scale-105 duration-300 border border-prachetas-yellow/30 hover:border-prachetas-yellow"
             >
-              <div className="bg-[#D86C1F] text-white w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <div className="bg-prachetas-yellow text-prachetas-black w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
                 <option.icon className="h-8 w-8" />
               </div>
-              <h3 className="text-2xl font-bold mb-4 text-[#2C5530]">{option.title}</h3>
-              <p className="text-[#333333] mb-6 text-lg leading-relaxed">
+              <h3 className="text-2xl font-bold mb-4 text-prachetas-yellow">{option.title}</h3>
+              <p className="text-gray-300 mb-6 text-lg leading-relaxed">
                 {option.description}
               </p>
               <Button
                 asChild
                 className={option.id === 1 
-                  ? "bg-[#D86C1F] text-white hover:bg-[#C35A15] w-full text-lg py-6" 
-                  : "border-2 border-[#2C5530] text-[#2C5530] hover:bg-[#2C5530] hover:text-white w-full text-lg py-6"}
+                  ? "bg-prachetas-yellow text-prachetas-black hover:bg-prachetas-bright-yellow w-full text-lg py-6 font-semibold" 
+                  : "border-2 border-prachetas-yellow text-prachetas-black bg-prachetas-yellow hover:bg-prachetas-bright-yellow w-full text-lg py-6 font-semibold"}
               >
                 <Link to={option.link}>
                   {option.buttonText}

@@ -18,7 +18,8 @@ const AboutSection = () => {
               <div className="bg-prachetas-black p-8 rounded-lg mb-6">
                 <h3 className="text-2xl font-bold text-prachetas-yellow mb-4">Our Mission</h3>
                 <p className="text-gray-300 leading-relaxed">
-                  Our mission is to empower communities through a holistic approach that combines sustainable development, quality education, and accessible healthcare. We are dedicated to creating lasting opportunities for growth, fostering resilience, and facilitating positive transformation for both individuals and society as a whole.
+                  To empower communities through sustainable development, quality education, and accessible healthcare,
+                  creating opportunities for growth and positive transformation.
                 </p>
               </div>
             
@@ -39,13 +40,14 @@ const AboutSection = () => {
             </div>
           
             <div className="relative">
+              <div className="bg-prachetas-yellow/10 absolute -top-4 -left-4 w-full h-full rounded-lg"></div>
               <img 
-                src="/Copy of WhatsApp Image 2025-02-26 at 15.41.35 (1).jpeg" 
-                alt="PRACHETAS Foundation community work"
+                src="/laptop-code.jpg" 
+                alt="Our team at work"
                 loading="eager"
                 width={600}
                 height={400}
-                className="rounded-lg shadow-lg w-full h-full object-cover border-4 border-prachetas-yellow" 
+                className="relative z-10 rounded-lg shadow-lg w-full h-full object-cover" 
               />
             </div>
           </div>

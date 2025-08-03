@@ -14,30 +14,68 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <section id="hero">
+      
+      {/* Hero Section - Dark background */}
+      <section id="hero" className="section-transition">
         <HeroSection />
       </section>
-      <section id="about">
+      
+      {/* Section Divider */}
+      <div className="section-divider"></div>
+      
+      {/* About Section - Light background */}
+      <section id="about" className="section-white section-transition">
         <AboutSection />
       </section>
-      <section id="impact">
+      
+      {/* Section Divider */}
+      <div className="section-divider"></div>
+      
+      {/* Impact Section - Light gray background */}
+      <section id="impact" className="section-light-gray section-transition">
         <ImpactSection />
       </section>
-      <section id="programs">
+      
+      {/* Section Divider */}
+      <div className="section-divider"></div>
+      
+      {/* Programs Section - White background */}
+      <section id="programs" className="section-white section-transition">
         <ProgramsSection />
       </section>
-      <section id="testimonials">
+      
+      {/* Section Divider */}
+      <div className="section-divider"></div>
+      
+      {/* Testimonials Section - Yellow accent background */}
+      <section id="testimonials" className="section-yellow-accent section-transition">
         <TestimonialsSection />
       </section>
-      <section id="gallery">
+      
+      {/* Section Divider */}
+      <div className="section-divider"></div>
+      
+      {/* Gallery Section - Light gray background */}
+      <section id="gallery" className="section-light-gray section-transition">
         <GallerySection />
       </section>
-      <section id="get-involved">
+      
+      {/* Section Divider */}
+      <div className="section-divider"></div>
+      
+      {/* Get Involved Section - Dark background */}
+      <section id="get-involved" className="section-dark section-transition">
         <GetInvolvedSection />
       </section>
-      <section id="contact">
+      
+      {/* Section Divider */}
+      <div className="section-divider"></div>
+      
+      {/* Contact Section - White background */}
+      <section id="contact" className="section-white section-transition">
         <ContactSection />
       </section>
+      
       <Footer />
     </div>
   );
