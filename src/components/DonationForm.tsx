@@ -119,6 +119,8 @@ const DonationForm = () => {
     }
   };
 
+  const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || '';
+
   // Add Razorpay payment handler
   const handleRazorpayPayment = async (values: z.infer<typeof formSchema>) => {
     console.log('handleRazorpayPayment called', values);
@@ -131,24 +133,35 @@ const DonationForm = () => {
 
       // 2. Open Razorpay checkout
       // Replace this with your actual Razorpay integration
-      // Example:
-      // const options = {
-      //   key: 'YOUR_RAZORPAY_KEY',
-      //   amount: orderData.amount,
-      //   currency: orderData.currency,
-      //   order_id: orderData.id,
-      //   handler: function (response) {
-      //     // This is called on payment success!
-      //     handlePaymentSuccess(values, response.razorpay_payment_id, response.razorpay_subscription_id);
-      //   },
-      //   // ...other options
-      // };
-      // const rzp = new window.Razorpay(options);
-      // rzp.open();
-
-      // For now, show a message to developer
-      alert('Integrate Razorpay here. On payment success, call handlePaymentSuccess(values, paymentId, subscriptionId)');
-      setIsSubmitting(false);
+      if (window.Razorpay) {
+        // Razorpay expects amount in paise (INR * 100)
+        const amountPaise = Math.round(parseFloat(values.amount) * 100);
+        const options = {
+          key: RAZORPAY_KEY_ID, // Use key from env
+          amount: amountPaise, // Use user-entered amount
+          currency: 'INR',
+          name: 'Prachetas Foundation',
+          description: 'Donation',
+          // order_id: orderData.id, // Uncomment when using real order
+          handler: function (response) {
+            // This is called on payment success!
+            handlePaymentSuccess(values, response.razorpay_payment_id, response.razorpay_subscription_id);
+          },
+          prefill: {
+            name: values.fullName,
+            email: values.email,
+            contact: values.phoneNumber || '',
+          },
+          theme: {
+            color: '#FFD600',
+          },
+        };
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } else {
+        alert('Razorpay JS SDK not loaded. Please add Razorpay script to your index.html.');
+        setIsSubmitting(false);
+      }
     } catch (error) {
       console.error('Payment error:', error);
       setIsSubmitting(false);
