@@ -154,7 +154,7 @@ const DonationForm = () => {
       if (lastPaymentDetails) {
         setIsSubmitting(true);
         setDonationError(null);
-        fetch('/.netlify/functions/donations', {
+        fetch('https://prachetas.netlify.app/.netlify/functions/donations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -205,9 +205,23 @@ const DonationForm = () => {
             <p className="text-gray-600 mb-8">
               A confirmation email has been sent to your email address.
             </p>
-            {donationError && (
-              <div className="text-red-600 mb-4">{donationError}</div>
-            )}
+            {/* Debug info for donation API call */}
+            <div className="bg-gray-100 rounded p-3 mb-4 text-left text-xs text-gray-700">
+              <strong>Debug Info:</strong><br />
+              Donation API call attempted: {lastPaymentDetails ? 'Yes' : 'No'}<br />
+              {lastPaymentDetails && (
+                <>
+                  Payment ID: {lastPaymentDetails.paymentId || 'N/A'}<br />
+                  Subscription ID: {lastPaymentDetails.subscriptionId || 'N/A'}<br />
+                  Donor Name: {lastPaymentDetails.values.fullName}<br />
+                  Donor Email: {lastPaymentDetails.values.email}<br />
+                  Amount: {lastPaymentDetails.values.amount}<br />
+                </>
+              )}
+              {donationError && (
+                <span className="text-red-600">Error: {donationError}</span>
+              )}
+            </div>
             <Button onClick={() => {
               setIsSuccess(false);
               form.reset();
