@@ -100,42 +100,11 @@ const DonationForm = () => {
     console.log('handleRazorpayPayment called', values);
     setIsSubmitting(true);
     try {
-      // 1. Create order on backend (if needed)
-      // Example:
-      // const orderResponse = await fetch('/.netlify/functions/create-order', { ... });
-      // const orderData = await orderResponse.json();
-
-      // 2. Open Razorpay checkout
-      // Replace this with your actual Razorpay integration
-      if (window.Razorpay) {
-        // Razorpay expects amount in paise (INR * 100)
-        const amountPaise = Math.round(parseFloat(values.amount) * 100);
-        const options = {
-          key: RAZORPAY_KEY_ID, // Use key from env
-          amount: amountPaise, // Use user-entered amount
-          currency: 'INR',
-          name: 'Prachetas Foundation',
-          description: 'Donation',
-          // order_id: orderData.id, // Uncomment when using real order
-          handler: function (response) {
-            // This is called on payment success!
-            handlePaymentSuccess(values, response.razorpay_payment_id, response.razorpay_subscription_id);
-          },
-          prefill: {
-            name: values.fullName,
-            email: values.email,
-            contact: values.phoneNumber || '',
-          },
-          theme: {
-            color: '#FFD600',
-          },
-        };
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-      } else {
-        alert('Razorpay JS SDK not loaded. Please add Razorpay script to your index.html.');
-        setIsSubmitting(false);
-      }
+      // Simulate payment success for testing (bypass Razorpay)
+      setTimeout(() => {
+        console.log('Simulating payment success...');
+        handlePaymentSuccess(values, 'test_payment_id', 'test_subscription_id');
+      }, 1000);
     } catch (error) {
       console.error('Payment error:', error);
       setIsSubmitting(false);
