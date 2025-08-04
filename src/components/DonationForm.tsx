@@ -65,6 +65,8 @@ const DonationForm = () => {
     subscriptionId?: string;
   } | null>(null);
   const [donationError, setDonationError] = useState<string | null>(null);
+  const [apiCallStatus, setApiCallStatus] = useState<string>("");
+  const [lastApiResponse, setLastApiResponse] = useState<any>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -115,14 +117,18 @@ const DonationForm = () => {
     console.log('onSubmit called', values);
     setIsSubmitting(true);
     setDonationError(null);
+    setApiCallStatus("Making API call...");
     
     // For production, detect the current domain
     const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
       ? 'http://localhost:8888' 
       : `https://${window.location.hostname}`;
     
+    const apiUrl = `${baseUrl}/.netlify/functions/donations`;
+    setApiCallStatus(`Calling: ${apiUrl}`);
+    
     // Save donation to database immediately
-    fetch(`${baseUrl}/.netlify/functions/donations`, {
+    fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -143,16 +149,22 @@ const DonationForm = () => {
       }),
     })
       .then(async (response) => {
-        console.log('Donation request sent');
+        console.log('Donation request sent, status:', response.status);
+        setApiCallStatus(`API Response: ${response.status} ${response.statusText}`);
         const result = await response.json();
         console.log('Donation response:', result);
+        setLastApiResponse(result);
         if (!result.success) {
           setDonationError(result.error || 'Failed to save donation');
+          setApiCallStatus(`API Error: ${result.error}`);
+        } else {
+          setApiCallStatus(`✅ Success! Donation ID: ${result.donation?.id}`);
         }
       })
       .catch((error) => {
         console.error('Error saving donation:', error);
         setDonationError('Network error: ' + error.message);
+        setApiCallStatus(`❌ Network Error: ${error.message}`);
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -228,6 +240,12 @@ const DonationForm = () => {
             <div className="bg-gray-100 rounded p-3 mb-4 text-left text-xs text-gray-700">
               <strong>Debug Info:</strong><br />
               Donation API call attempted: {lastPaymentDetails ? 'Yes' : 'No'}<br />
+              API Status: {apiCallStatus}<br />
+              {lastApiResponse && (
+                <>
+                  Last Response: {JSON.stringify(lastApiResponse, null, 2)}<br />
+                </>
+              )}
               {lastPaymentDetails && (
                 <>
                   Payment ID: {lastPaymentDetails.paymentId || 'N/A'}<br />
@@ -246,6 +264,8 @@ const DonationForm = () => {
               form.reset();
               setLastPaymentDetails(null);
               setDonationError(null);
+              setApiCallStatus("");
+              setLastApiResponse(null);
             }}>
               Make Another Donation
             </Button>
@@ -497,6 +517,20 @@ const DonationForm = () => {
                   </>
                 )}
               </Button>
+              
+              {/* Real-time API Status */}
+              {apiCallStatus && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+                  <strong>API Status:</strong> {apiCallStatus}
+                </div>
+              )}
+              
+              {lastApiResponse && (
+                <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded text-xs">
+                  <strong>Last API Response:</strong>
+                  <pre className="mt-1 whitespace-pre-wrap">{JSON.stringify(lastApiResponse, null, 2)}</pre>
+                </div>
+              )}
             </form>
           </Form>
           {/* Direct test button for donation API call */}
@@ -507,22 +541,26 @@ const DonationForm = () => {
               onClick={() => {
                 const values = form.getValues();
                 console.log('Direct test button clicked', values);
+                setApiCallStatus("Direct test - Making API call...");
                 
                 // For production, detect the current domain
                 const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
                   ? 'http://localhost:8888' 
                   : `https://${window.location.hostname}`;
+                
+                const apiUrl = `${baseUrl}/.netlify/functions/donations`;
+                setApiCallStatus(`Direct test - Calling: ${apiUrl}`);
                   
-                fetch(`${baseUrl}/.netlify/functions/donations`, {
+                fetch(apiUrl, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({
-                    donorName: values.fullName,
-                    donorEmail: values.email,
+                    donorName: values.fullName || 'Test User',
+                    donorEmail: values.email || 'test@example.com',
                     donorPhone: values.phoneNumber || null,
-                    amount: parseFloat(values.amount),
+                    amount: parseFloat(values.amount) || 100,
                     currency: 'INR',
                     paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
                     message: values.message || null,
@@ -534,12 +572,20 @@ const DonationForm = () => {
                   }),
                 })
                   .then(async (response) => {
-                    console.log('Direct test donation request sent');
+                    console.log('Direct test donation request sent, status:', response.status);
+                    setApiCallStatus(`Direct test - Response: ${response.status} ${response.statusText}`);
                     const result = await response.json();
                     console.log('Direct test donation response:', result);
+                    setLastApiResponse(result);
+                    if (result.success) {
+                      setApiCallStatus(`✅ Direct test SUCCESS! Donation ID: ${result.donation?.id}`);
+                    } else {
+                      setApiCallStatus(`❌ Direct test failed: ${result.error}`);
+                    }
                   })
                   .catch((error) => {
                     console.error('Direct test error saving donation:', error);
+                    setApiCallStatus(`❌ Direct test network error: ${error.message}`);
                   });
               }}
             >
