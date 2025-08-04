@@ -113,8 +113,46 @@ const DonationForm = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     console.log('onSubmit called', values);
-    // Instead of saving donation here, trigger Razorpay payment
-    handleRazorpayPayment(values);
+    setIsSubmitting(true);
+    setDonationError(null);
+    // Save donation to database immediately
+    fetch('https://prachetas.netlify.app/.netlify/functions/donations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        donorName: values.fullName,
+        donorEmail: values.email,
+        donorPhone: values.phoneNumber || null,
+        amount: parseFloat(values.amount),
+        currency: 'INR',
+        paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
+        message: values.message || null,
+        status: 'initiated', // status before payment
+        panCard: values.panCard || null,
+        address: values.address || null,
+        paymentId: null,
+        subscriptionId: null
+      }),
+    })
+      .then(async (response) => {
+        console.log('Donation request sent');
+        const result = await response.json();
+        console.log('Donation response:', result);
+        if (!result.success) {
+          setDonationError(result.error || 'Failed to save donation');
+        }
+      })
+      .catch((error) => {
+        console.error('Error saving donation:', error);
+        setDonationError('Network error: ' + error.message);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
+        // Continue to payment simulation
+        handleRazorpayPayment(values);
+      });
   };
 
   if (isSuccess) {
