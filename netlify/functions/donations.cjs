@@ -4,7 +4,7 @@ require('dotenv').config();
 const sql = neon(process.env.NETLIFY_DATABASE_URL);
 
 const path = require('path');
-const { sendDonationReceipt } = require(path.resolve(__dirname, 'email.js'));
+const { sendDonationReceipt } = require(path.resolve(__dirname, 'email.cjs'));
 
 exports.handler = async function(event, context) {
   if (event.httpMethod === 'OPTIONS') {

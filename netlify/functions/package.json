@@ -3,7 +3,8 @@
   "private": true,
   "version": "1.0.0",
   "dependencies": {
-    "imagekit": "^4.1.4",
+    "imagekit": "^6.0.0",
+    "nodemailer": "^7.0.5",
     "vite_react_shadcn_ts": "file:../.."
   }
 }

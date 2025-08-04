@@ -1,6 +1,5 @@
-import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-dotenv.config();
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 
 const createTransporter = () => {
   return nodemailer.createTransport({
@@ -75,7 +74,7 @@ const generateReceiptHTML = (donationData) => {
   `;
 };
 
-export const sendDonationReceipt = async (donationData) => {
+const sendDonationReceipt = async (donationData) => {
   try {
     const transporter = createTransporter();
     await transporter.verify();
@@ -87,7 +86,7 @@ export const sendDonationReceipt = async (donationData) => {
       to: donationData.donorEmail,
       subject: `Donation Receipt - Thank you ${donationData.donorName}!`,
       html: generateReceiptHTML(donationData),
-      text: `Dear ${donationData.donorName},\n\nThank you for your generous donation to ISKCON!\n\nDonation Details:\n- Amount: ₹${donationData.amount}\n- Type: ${donationData.donationType === 'one-time' ? 'One-time Donation' : 'Monthly Subscription'}\n- Transaction ID: ${donationData.transactionId}\n- Date: ${donationData.date}\n\n${donationData.message ? `Your Message: "${donationData.message}"` : ''}\n\nThis email serves as your official donation receipt. Please keep it for your records.\n\nMay Lord Krishna bless you and your family!\n\nISKCON Temple\nEmail: donations@iskcon.org\nWebsite: www.iskcon.org\n      `
+      text: `Dear ${donationData.donorName},\n\nThank you for your generous donation to ISKCON!\n\nDonation Details:\n- Amount: ₹${donationData.amount}\n- Type: ${donationData.donationType === 'one-time' ? 'One-time Donation' : 'Monthly Subscription'}\n- Transaction ID: ${donationData.transactionId}\n- Date: ${donationData.date}\n\n${donationData.message ? `Your Message: \"${donationData.message}\"` : ''}\n\nThis email serves as your official donation receipt. Please keep it for your records.\n\nMay Lord Krishna bless you and your family!\n\nISKCON Temple\nEmail: donations@iskcon.org\nWebsite: www.iskcon.org\n      `
     };
     const result = await transporter.sendMail(mailOptions);
     return {
@@ -104,6 +103,6 @@ export const sendDonationReceipt = async (donationData) => {
   }
 };
 
-export default {
+module.exports = {
   sendDonationReceipt
 };
