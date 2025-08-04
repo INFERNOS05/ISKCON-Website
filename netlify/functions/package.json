@@ -5,7 +5,7 @@
   "dependencies": {
     "imagekit": "^6.0.0",
     "nodemailer": "^7.0.5",
-    "@netlify/neon": "^0.6.0",
+    "@neondatabase/serverless": "^0.8.0",
     "vite_react_shadcn_ts": "file:../.."
   }
 }

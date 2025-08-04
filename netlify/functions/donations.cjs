@@ -1,4 +1,4 @@
-const { neon } = require('@netlify/neon');
+const { neon } = require('@neondatabase/serverless');
 require('dotenv').config();
 
 const sql = neon(process.env.NETLIFY_DATABASE_URL);
