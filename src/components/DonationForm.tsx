@@ -64,6 +64,7 @@ const DonationForm = () => {
     paymentId?: string;
     subscriptionId?: string;
   } | null>(null);
+  const [donationError, setDonationError] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -151,38 +152,43 @@ const DonationForm = () => {
     // On success page mount, call backend to save donation if not already done
     React.useEffect(() => {
       if (lastPaymentDetails) {
-        (async () => {
-          setIsSubmitting(true);
-          try {
-            const response = await fetch('/.netlify/functions/donations', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                donorName: lastPaymentDetails.values.fullName,
-                donorEmail: lastPaymentDetails.values.email,
-                donorPhone: lastPaymentDetails.values.phoneNumber || null,
-                amount: parseFloat(lastPaymentDetails.values.amount),
-                currency: 'INR',
-                paymentType: lastPaymentDetails.values.donationType === 'one-time' ? 'one-time' : 'monthly',
-                message: lastPaymentDetails.values.message || null,
-                status: 'completed',
-                panCard: lastPaymentDetails.values.panCard || null,
-                address: lastPaymentDetails.values.address || null,
-                paymentId: lastPaymentDetails.paymentId || null,
-                subscriptionId: lastPaymentDetails.subscriptionId || null
-              }),
-            });
+        setIsSubmitting(true);
+        setDonationError(null);
+        fetch('/.netlify/functions/donations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            donorName: lastPaymentDetails.values.fullName,
+            donorEmail: lastPaymentDetails.values.email,
+            donorPhone: lastPaymentDetails.values.phoneNumber || null,
+            amount: parseFloat(lastPaymentDetails.values.amount),
+            currency: 'INR',
+            paymentType: lastPaymentDetails.values.donationType === 'one-time' ? 'one-time' : 'monthly',
+            message: lastPaymentDetails.values.message || null,
+            status: 'completed',
+            panCard: lastPaymentDetails.values.panCard || null,
+            address: lastPaymentDetails.values.address || null,
+            paymentId: lastPaymentDetails.paymentId || null,
+            subscriptionId: lastPaymentDetails.subscriptionId || null
+          }),
+        })
+          .then(async (response) => {
             console.log('Donation request sent');
             const result = await response.json();
             console.log('Donation response:', result);
-          } catch (error) {
+            if (!result.success) {
+              setDonationError(result.error || 'Failed to save donation');
+            }
+          })
+          .catch((error) => {
             console.error('Error saving donation:', error);
-          } finally {
+            setDonationError('Network error: ' + error.message);
+          })
+          .finally(() => {
             setIsSubmitting(false);
-          }
-        })();
+          });
       }
     }, [lastPaymentDetails]);
     return (
@@ -199,10 +205,14 @@ const DonationForm = () => {
             <p className="text-gray-600 mb-8">
               A confirmation email has been sent to your email address.
             </p>
+            {donationError && (
+              <div className="text-red-600 mb-4">{donationError}</div>
+            )}
             <Button onClick={() => {
               setIsSuccess(false);
               form.reset();
               setLastPaymentDetails(null);
+              setDonationError(null);
             }}>
               Make Another Donation
             </Button>
