@@ -78,17 +78,36 @@ const DonationForm = () => {
     setIsSubmitting(true);
     
     try {
-      // Here you would normally submit the form data to your backend
-      console.log(values);
+      // Submit the form data to your backend
+      const response = await fetch('/api/donations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          donorName: values.fullName,
+          donorEmail: values.email,
+          amount: parseFloat(values.amount),
+          currency: 'INR',
+          paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
+          message: values.message || null,
+          status: 'completed'
+        }),
+      });
+
+      const result = await response.json();
       
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Show success state
-      setIsSuccess(true);
+      if (result.success) {
+        console.log('Donation saved:', result.donation);
+        // Show success state
+        setIsSuccess(true);
+      } else {
+        throw new Error(result.error || 'Failed to save donation');
+      }
       
     } catch (error) {
       console.error("Error submitting donation:", error);
+      // You could show an error message to the user here
     } finally {
       setIsSubmitting(false);
     }

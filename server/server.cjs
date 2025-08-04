@@ -9,7 +9,7 @@ const paymentRoutes = require('./routes/payment.routes.cjs');
 const donationRoutes = require('./routes/donation.routes.cjs');
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: '../.env' });
 
 // Validate required environment variables
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
