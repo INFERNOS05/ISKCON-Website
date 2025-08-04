@@ -125,15 +125,30 @@ const DonationForm = () => {
     setIsSubmitting(true);
     try {
       // 1. Create order on backend (if needed)
+      // Example:
+      // const orderResponse = await fetch('/.netlify/functions/create-order', { ... });
+      // const orderData = await orderResponse.json();
+
       // 2. Open Razorpay checkout
-      // 3. On payment success, call handlePaymentSuccess
-      // This is a placeholder for actual Razorpay integration
-      // Replace with your real Razorpay logic
-      // Simulate payment success after a short delay
-      setTimeout(() => {
-        console.log('Simulating payment success');
-        handlePaymentSuccess(values, 'demo_payment_id', 'demo_subscription_id');
-      }, 1500);
+      // Replace this with your actual Razorpay integration
+      // Example:
+      // const options = {
+      //   key: 'YOUR_RAZORPAY_KEY',
+      //   amount: orderData.amount,
+      //   currency: orderData.currency,
+      //   order_id: orderData.id,
+      //   handler: function (response) {
+      //     // This is called on payment success!
+      //     handlePaymentSuccess(values, response.razorpay_payment_id, response.razorpay_subscription_id);
+      //   },
+      //   // ...other options
+      // };
+      // const rzp = new window.Razorpay(options);
+      // rzp.open();
+
+      // For now, show a message to developer
+      alert('Integrate Razorpay here. On payment success, call handlePaymentSuccess(values, paymentId, subscriptionId)');
+      setIsSubmitting(false);
     } catch (error) {
       console.error('Payment error:', error);
       setIsSubmitting(false);
