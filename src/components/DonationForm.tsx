@@ -79,7 +79,7 @@ const DonationForm = () => {
     
     try {
       // Submit the form data to your backend
-      const response = await fetch('/api/donations', {
+      const response = await fetch('/.netlify/functions/donations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
