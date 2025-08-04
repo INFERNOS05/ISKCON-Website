@@ -175,17 +175,19 @@ const DonationForm = () => {
 
   if (isSuccess) {
     // On success page mount, call backend to save donation if not already done
+    const [apiCallStatus, setApiCallStatus] = useState("");
+    const [lastApiResponse, setLastApiResponse] = useState<any>(null);
     React.useEffect(() => {
       if (lastPaymentDetails) {
         setIsSubmitting(true);
         setDonationError(null);
-        
-        // For production, detect the current domain
-        const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-          ? 'http://localhost:8888' 
+        setApiCallStatus("Making API call after payment...");
+        const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+          ? 'http://localhost:8888'
           : `https://${window.location.hostname}`;
-          
-        fetch(`${baseUrl}/.netlify/functions/donations`, {
+        const apiUrl = `${baseUrl}/.netlify/functions/donations`;
+        setApiCallStatus(`Calling: ${apiUrl}`);
+        fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -206,16 +208,19 @@ const DonationForm = () => {
           }),
         })
           .then(async (response) => {
-            console.log('Donation request sent');
+            setApiCallStatus(`API Response: ${response.status} ${response.statusText}`);
             const result = await response.json();
-            console.log('Donation response:', result);
+            setLastApiResponse(result);
             if (!result.success) {
               setDonationError(result.error || 'Failed to save donation');
+              setApiCallStatus(`API Error: ${result.error}`);
+            } else {
+              setApiCallStatus(`✅ Success! Donation ID: ${result.donation?.id}`);
             }
           })
           .catch((error) => {
-            console.error('Error saving donation:', error);
             setDonationError('Network error: ' + error.message);
+            setApiCallStatus(`❌ Network Error: ${error.message}`);
           })
           .finally(() => {
             setIsSubmitting(false);

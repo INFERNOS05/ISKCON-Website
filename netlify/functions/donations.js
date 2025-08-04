@@ -3,6 +3,9 @@ require('dotenv').config();
 
 const sql = neon(process.env.NETLIFY_DATABASE_URL);
 
+const path = require('path');
+const { sendDonationReceipt } = require(path.resolve(__dirname, 'email.js'));
+
 exports.handler = async function(event, context) {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -44,12 +47,24 @@ exports.handler = async function(event, context) {
           ${new Date().toISOString()}
         ) RETURNING *;
       `;
+
+      // Send email receipt after saving donation
+      const emailResult = await sendDonationReceipt({
+        donorName: donationData.donorName,
+        donorEmail: donationData.donorEmail,
+        amount: donationData.amount,
+        transactionId: donationData.paymentId || result[0].payment_id || 'N/A',
+        donationType: donationData.paymentType || 'one-time',
+        date: new Date().toLocaleString(),
+        message: donationData.message || ''
+      });
+
       return {
         statusCode: 200,
         headers: {
           'Access-Control-Allow-Origin': '*',
         },
-        body: JSON.stringify({ success: true, donation: result[0] })
+        body: JSON.stringify({ success: true, donation: result[0], email: emailResult })
       };
     } catch (error) {
       return {
