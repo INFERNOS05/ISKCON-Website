@@ -80,11 +80,9 @@ const DonationForm = () => {
     form.setValue("amount", value);
   };
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const handlePaymentSuccess = async (values: z.infer<typeof formSchema>, paymentId?: string, subscriptionId?: string) => {
     setIsSubmitting(true);
-    
     try {
-      // Submit the form data to your backend
       const response = await fetch('/.netlify/functions/donations', {
         method: 'POST',
         headers: {
@@ -100,26 +98,47 @@ const DonationForm = () => {
           message: values.message || null,
           status: 'completed',
           panCard: values.panCard || null,
-          address: values.address || null
+          address: values.address || null,
+          paymentId: paymentId || null,
+          subscriptionId: subscriptionId || null
         }),
       });
-
       const result = await response.json();
-      
       if (result.success) {
-        console.log('Donation saved:', result.donation);
-        // Show success state
         setIsSuccess(true);
       } else {
         throw new Error(result.error || 'Failed to save donation');
       }
-      
     } catch (error) {
-      console.error("Error submitting donation:", error);
-      // You could show an error message to the user here
+      console.error('Error saving donation:', error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Add Razorpay payment handler
+  const handleRazorpayPayment = async (values: z.infer<typeof formSchema>) => {
+    setIsSubmitting(true);
+    try {
+      // 1. Create order on backend (if needed)
+      // 2. Open Razorpay checkout
+      // 3. On payment success, call handlePaymentSuccess
+      // This is a placeholder for actual Razorpay integration
+      // Replace with your real Razorpay logic
+      // Simulate payment success after a short delay
+      setTimeout(() => {
+        // Replace with actual paymentId/subscriptionId from Razorpay response
+        handlePaymentSuccess(values, 'demo_payment_id', 'demo_subscription_id');
+      }, 1500);
+    } catch (error) {
+      console.error('Payment error:', error);
+      setIsSubmitting(false);
+    }
+  };
+
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Instead of saving donation here, trigger Razorpay payment
+    handleRazorpayPayment(values);
   };
 
   if (isSuccess) {
