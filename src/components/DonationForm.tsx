@@ -124,7 +124,7 @@ const DonationForm = () => {
       ? 'http://localhost:8888' 
       : `https://${window.location.hostname}`;
     
-    const apiUrl = `${baseUrl}/.netlify/functions/donations`;
+    const apiUrl = `${baseUrl}/.netlify/functions/donations.cjs`;
     setApiCallStatus(`Calling: ${apiUrl}`);
     
     // Save donation to database immediately
@@ -185,7 +185,7 @@ const DonationForm = () => {
         const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
           ? 'http://localhost:8888'
           : `https://${window.location.hostname}`;
-        const apiUrl = `${baseUrl}/.netlify/functions/donations`;
+        const apiUrl = `${baseUrl}/.netlify/functions/donations.cjs`;
         setApiCallStatus(`Calling: ${apiUrl}`);
         fetch(apiUrl, {
           method: 'POST',
@@ -553,7 +553,7 @@ const DonationForm = () => {
                   ? 'http://localhost:8888' 
                   : `https://${window.location.hostname}`;
                 
-                const apiUrl = `${baseUrl}/.netlify/functions/donations`;
+                const apiUrl = `${baseUrl}/.netlify/functions/donations.cjs`;
                 setApiCallStatus(`Direct test - Calling: ${apiUrl}`);
                   
                 fetch(apiUrl, {
