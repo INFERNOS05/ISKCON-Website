@@ -58,6 +58,12 @@ const DonationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState<string | null>(null);
+  // Store last payment details for success page call
+  const [lastPaymentDetails, setLastPaymentDetails] = useState<{
+    values: z.infer<typeof formSchema>;
+    paymentId?: string;
+    subscriptionId?: string;
+  } | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -82,41 +88,8 @@ const DonationForm = () => {
 
   const handlePaymentSuccess = async (values: z.infer<typeof formSchema>, paymentId?: string, subscriptionId?: string) => {
     console.log('handlePaymentSuccess called', { values, paymentId, subscriptionId });
-    setIsSubmitting(true);
-    try {
-      const response = await fetch('/.netlify/functions/donations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          donorName: values.fullName,
-          donorEmail: values.email,
-          donorPhone: values.phoneNumber || null,
-          amount: parseFloat(values.amount),
-          currency: 'INR',
-          paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
-          message: values.message || null,
-          status: 'completed',
-          panCard: values.panCard || null,
-          address: values.address || null,
-          paymentId: paymentId || null,
-          subscriptionId: subscriptionId || null
-        }),
-      });
-      console.log('Donation request sent');
-      const result = await response.json();
-      console.log('Donation response:', result);
-      if (result.success) {
-        setIsSuccess(true);
-      } else {
-        throw new Error(result.error || 'Failed to save donation');
-      }
-    } catch (error) {
-      console.error('Error saving donation:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setLastPaymentDetails({ values, paymentId, subscriptionId });
+    setIsSuccess(true);
   };
 
   const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || '';
@@ -175,10 +148,48 @@ const DonationForm = () => {
   };
 
   if (isSuccess) {
+    // On success page mount, call backend to save donation if not already done
+    React.useEffect(() => {
+      if (lastPaymentDetails) {
+        (async () => {
+          setIsSubmitting(true);
+          try {
+            const response = await fetch('/.netlify/functions/donations', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                donorName: lastPaymentDetails.values.fullName,
+                donorEmail: lastPaymentDetails.values.email,
+                donorPhone: lastPaymentDetails.values.phoneNumber || null,
+                amount: parseFloat(lastPaymentDetails.values.amount),
+                currency: 'INR',
+                paymentType: lastPaymentDetails.values.donationType === 'one-time' ? 'one-time' : 'monthly',
+                message: lastPaymentDetails.values.message || null,
+                status: 'completed',
+                panCard: lastPaymentDetails.values.panCard || null,
+                address: lastPaymentDetails.values.address || null,
+                paymentId: lastPaymentDetails.paymentId || null,
+                subscriptionId: lastPaymentDetails.subscriptionId || null
+              }),
+            });
+            console.log('Donation request sent');
+            const result = await response.json();
+            console.log('Donation response:', result);
+          } catch (error) {
+            console.error('Error saving donation:', error);
+          } finally {
+            setIsSubmitting(false);
+          }
+        })();
+      }
+    }, [lastPaymentDetails]);
     return (
       <Card className="w-full max-w-2xl mx-auto">
         <CardContent className="pt-6">
-          <div className="text-center py-10">            <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
+          <div className="text-center py-10">
+            <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
               <Check className="h-8 w-8 text-yellow-600" />
             </div>
             <h2 className="text-2xl font-bold mb-4">Thank You For Your Donation!</h2>
@@ -191,6 +202,7 @@ const DonationForm = () => {
             <Button onClick={() => {
               setIsSuccess(false);
               form.reset();
+              setLastPaymentDetails(null);
             }}>
               Make Another Donation
             </Button>
