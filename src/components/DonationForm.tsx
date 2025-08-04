@@ -81,6 +81,7 @@ const DonationForm = () => {
   };
 
   const handlePaymentSuccess = async (values: z.infer<typeof formSchema>, paymentId?: string, subscriptionId?: string) => {
+    console.log('handlePaymentSuccess called', { values, paymentId, subscriptionId });
     setIsSubmitting(true);
     try {
       const response = await fetch('/.netlify/functions/donations', {
@@ -103,7 +104,9 @@ const DonationForm = () => {
           subscriptionId: subscriptionId || null
         }),
       });
+      console.log('Donation request sent');
       const result = await response.json();
+      console.log('Donation response:', result);
       if (result.success) {
         setIsSuccess(true);
       } else {
@@ -118,6 +121,7 @@ const DonationForm = () => {
 
   // Add Razorpay payment handler
   const handleRazorpayPayment = async (values: z.infer<typeof formSchema>) => {
+    console.log('handleRazorpayPayment called', values);
     setIsSubmitting(true);
     try {
       // 1. Create order on backend (if needed)
@@ -127,7 +131,7 @@ const DonationForm = () => {
       // Replace with your real Razorpay logic
       // Simulate payment success after a short delay
       setTimeout(() => {
-        // Replace with actual paymentId/subscriptionId from Razorpay response
+        console.log('Simulating payment success');
         handlePaymentSuccess(values, 'demo_payment_id', 'demo_subscription_id');
       }, 1500);
     } catch (error) {
@@ -137,6 +141,7 @@ const DonationForm = () => {
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    console.log('onSubmit called', values);
     // Instead of saving donation here, trigger Razorpay payment
     handleRazorpayPayment(values);
   };
