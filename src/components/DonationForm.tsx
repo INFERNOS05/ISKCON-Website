@@ -115,8 +115,14 @@ const DonationForm = () => {
     console.log('onSubmit called', values);
     setIsSubmitting(true);
     setDonationError(null);
+    
+    // For production, detect the current domain
+    const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+      ? 'http://localhost:8888' 
+      : `https://${window.location.hostname}`;
+    
     // Save donation to database immediately
-    fetch('https://prachetas.netlify.app/.netlify/functions/donations', {
+    fetch(`${baseUrl}/.netlify/functions/donations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -161,7 +167,13 @@ const DonationForm = () => {
       if (lastPaymentDetails) {
         setIsSubmitting(true);
         setDonationError(null);
-        fetch('https://prachetas.netlify.app/.netlify/functions/donations', {
+        
+        // For production, detect the current domain
+        const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+          ? 'http://localhost:8888' 
+          : `https://${window.location.hostname}`;
+          
+        fetch(`${baseUrl}/.netlify/functions/donations`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -244,36 +256,36 @@ const DonationForm = () => {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Make a Donation</CardTitle>
-        <CardDescription>
-          Support our mission to create sustainable technology solutions for communities in need.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Donation Amount Selection */}
-            <div className="space-y-3">
-              <FormLabel>Select Donation Amount</FormLabel>
-              <div className="grid grid-cols-3 gap-3">              {["250", "500", "1000", "2500", "5000", "10000"].map((amount) => (
-                  <Button
-                    key={amount}
-                    type="button"
-                    variant={selectedAmount === amount ? "default" : "outline"}
-                    className={selectedAmount === amount ? "bg-prachetas-yellow text-black hover:bg-prachetas-orange" : ""}
-                    onClick={() => handleAmountSelection(amount)}
-                  >
-                    ₹{amount}
-                  </Button>
-                ))}
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Make a Donation</CardTitle>
+          <CardDescription>
+            Support our mission to create sustainable technology solutions for communities in need.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Donation Amount Selection */}
+              <div className="space-y-3">
+                <FormLabel>Select Donation Amount</FormLabel>
+                <div className="grid grid-cols-3 gap-3">
+                  {["250", "500", "1000", "2500", "5000", "10000"].map((amount) => (
+                    <Button
+                      key={amount}
+                      type="button"
+                      variant={selectedAmount === amount ? "default" : "outline"}
+                      className={selectedAmount === amount ? "bg-prachetas-yellow text-black hover:bg-prachetas-orange" : ""}
+                      onClick={() => handleAmountSelection(amount)}
+                    >
+                      ₹{amount}
+                    </Button>
+                  ))}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
                   <FormItem>
                     <FormControl>
                       <div className="relative">
@@ -293,211 +305,250 @@ const DonationForm = () => {
                   </FormItem>
                 )}
               />
-            </div>
-
-            {/* Donation Type */}
-            <FormField
-              control={form.control}
-              name="donationType"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Donation Type</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex space-x-4"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="one-time" id="one-time" />
-                        <FormLabel htmlFor="one-time" className="font-normal cursor-pointer">
-                          One-time Donation
-                        </FormLabel>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="monthly" id="monthly" />
-                        <FormLabel htmlFor="monthly" className="font-normal cursor-pointer">
-                          Monthly Donation
-                        </FormLabel>
-                      </div>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Personal Information */}
-            <div className="grid gap-4 md:grid-cols-2">
+              </div>
+              {/* Donation Type */}
               <FormField
                 control={form.control}
-                name="fullName"
+                name="donationType"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Full Name</FormLabel>
+                  <FormItem className="space-y-3">
+                    <FormLabel>Donation Type</FormLabel>
                     <FormControl>
-                      <Input placeholder="John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Address</FormLabel>
-                    <FormControl>
-                      <Input placeholder="you@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Additional Information */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="phoneNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Phone Number</FormLabel>
-                    <FormControl>
-                      <Input placeholder="0000000000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="panCard"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>PAN Card (Optional - for tax benefits)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter PAN card number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Address */}
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Enter your address..."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Payment Method */}
-            <FormField
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Payment Method</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a payment method" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="credit-card">
-                        <div className="flex items-center">
-                          <CreditCard className="mr-2 h-4 w-4" /> Credit Card
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="one-time" id="one-time" />
+                          <FormLabel htmlFor="one-time" className="font-normal cursor-pointer">
+                            One-time Donation
+                          </FormLabel>
                         </div>
-                      </SelectItem>
-                      <SelectItem value="paypal">
-                        <div className="flex items-center">
-                          <span className="mr-2 font-bold text-blue-600">P</span> PayPal
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="monthly" id="monthly" />
+                          <FormLabel htmlFor="monthly" className="font-normal cursor-pointer">
+                            Monthly Donation
+                          </FormLabel>
                         </div>
-                      </SelectItem>
-                      <SelectItem value="bank-transfer">
-                        <div className="flex items-center">
-                          <span className="mr-2">🏦</span> Bank Transfer
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Message */}
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Message (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Share why you're supporting our cause..."
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Updates Opt-in */}
-            <FormField
-              control={form.control}
-              name="receiveUpdates"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <div className="space-y-1 leading-none">
-                    <FormLabel>
-                      Keep me updated about how my donation is making an impact
-                    </FormLabel>
-                  </div>
-                </FormItem>
-              )}
-            />
-
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Personal Information */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="John Doe" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="you@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              {/* Additional Information */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="0000000000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="panCard"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>PAN Card (Optional - for tax benefits)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter PAN card number" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              {/* Address */}
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Address</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter your address..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Payment Method */}
+              <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Payment Method</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a payment method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="credit-card">
+                          <div className="flex items-center">
+                            <CreditCard className="mr-2 h-4 w-4" /> Credit Card
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="paypal">
+                          <div className="flex items-center">
+                            <span className="mr-2 font-bold text-blue-600">P</span> PayPal
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="bank-transfer">
+                          <div className="flex items-center">
+                            <span className="mr-2">🏦</span> Bank Transfer
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Message */}
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Message (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Share why you're supporting our cause..."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {/* Updates Opt-in */}
+              <FormField
+                control={form.control}
+                name="receiveUpdates"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
+                        Keep me updated about how my donation is making an impact
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="w-full bg-prachetas-yellow text-black hover:bg-prachetas-orange"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Processing..." : (
+                  <>
+                    <Heart className="mr-2 h-4 w-4" /> Complete Donation
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
+          {/* Direct test button for donation API call */}
+          <div className="mt-4">
             <Button
-              type="submit"
-              className="w-full bg-prachetas-yellow text-black hover:bg-prachetas-orange"
-              disabled={isSubmitting}
+              type="button"
+              className="w-full bg-blue-600 text-white"
+              onClick={() => {
+                const values = form.getValues();
+                console.log('Direct test button clicked', values);
+                
+                // For production, detect the current domain
+                const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                  ? 'http://localhost:8888' 
+                  : `https://${window.location.hostname}`;
+                  
+                fetch(`${baseUrl}/.netlify/functions/donations`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    donorName: values.fullName,
+                    donorEmail: values.email,
+                    donorPhone: values.phoneNumber || null,
+                    amount: parseFloat(values.amount),
+                    currency: 'INR',
+                    paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
+                    message: values.message || null,
+                    status: 'test-direct',
+                    panCard: values.panCard || null,
+                    address: values.address || null,
+                    paymentId: null,
+                    subscriptionId: null
+                  }),
+                })
+                  .then(async (response) => {
+                    console.log('Direct test donation request sent');
+                    const result = await response.json();
+                    console.log('Direct test donation response:', result);
+                  })
+                  .catch((error) => {
+                    console.error('Direct test error saving donation:', error);
+                  });
+              }}
             >
-              {isSubmitting ? "Processing..." : (
-                <>
-                  <Heart className="mr-2 h-4 w-4" /> Complete Donation
-                </>
-              )}
+              Test Direct Donation API Call
             </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
-  );
+          </div>
+        </CardContent>
+      </Card>
+    );
 };
 
 export default DonationForm;
