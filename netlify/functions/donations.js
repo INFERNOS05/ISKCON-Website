@@ -1,4 +1,5 @@
 const { neon } = require('@netlify/neon');
+require('dotenv').config();
 
 const sql = neon(process.env.NETLIFY_DATABASE_URL);
 
@@ -26,11 +27,13 @@ exports.handler = async function(event, context) {
       }
       const result = await sql`
         INSERT INTO donations (
-          donor_name, donor_email, donor_phone, amount, currency, payment_type, payment_id, subscription_id, message, status, created_at
+          donor_name, donor_email, donor_phone, pan_card, address, amount, currency, payment_type, payment_id, subscription_id, message, status, created_at
         ) VALUES (
           ${donationData.donorName},
           ${donationData.donorEmail},
           ${donationData.donorPhone || null},
+          ${donationData.panCard || null},
+          ${donationData.address || null},
           ${donationData.amount},
           ${donationData.currency || 'INR'},
           ${donationData.paymentType || null},

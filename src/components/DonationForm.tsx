@@ -38,6 +38,9 @@ const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
+  phoneNumber: z.string().optional(),
+  panCard: z.string().optional(),
+  address: z.string().optional(),
   amount: z.string().min(1, {
     message: "Please select or enter a donation amount.",
   }),
@@ -61,6 +64,9 @@ const DonationForm = () => {
     defaultValues: {
       fullName: "",
       email: "",
+      phoneNumber: "",
+      panCard: "",
+      address: "",
       amount: "",
       donationType: "one-time",
       paymentMethod: "credit-card",
@@ -87,11 +93,14 @@ const DonationForm = () => {
         body: JSON.stringify({
           donorName: values.fullName,
           donorEmail: values.email,
+          donorPhone: values.phoneNumber || null,
           amount: parseFloat(values.amount),
           currency: 'INR',
           paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
           message: values.message || null,
-          status: 'completed'
+          status: 'completed',
+          panCard: values.panCard || null,
+          address: values.address || null
         }),
       });
 
@@ -252,6 +261,55 @@ const DonationForm = () => {
                 )}
               />
             </div>
+
+            {/* Additional Information */}
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0000000000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="panCard"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>PAN Card (Optional - for tax benefits)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter PAN card number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Address */}
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter your address..."
+                      className="resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Payment Method */}
             <FormField

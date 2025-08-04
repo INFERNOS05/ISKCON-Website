@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS donations (
   donor_name VARCHAR(255) NOT NULL,
   donor_email VARCHAR(255) NOT NULL,
   donor_phone VARCHAR(20),
+  pan_card VARCHAR(20),
+  address TEXT,
   amount NUMERIC(12,2) NOT NULL,
   currency VARCHAR(10) DEFAULT 'INR',
   payment_type VARCHAR(50),
