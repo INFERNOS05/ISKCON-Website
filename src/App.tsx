@@ -11,6 +11,8 @@ import Programs from "./pages/Programs";
 import Impact from "./pages/Impact";
 import GetInvolved from "./pages/GetInvolved";
 import Contact from "./pages/Contact";
+import Volunteer from "./pages/Volunteer";
+import Partner from "./pages/Partner";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +29,8 @@ const App = () => (
           <Route path="/get-involved" element={<GetInvolved />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/donate" element={<Donate />} />
+          <Route path="/volunteer" element={<Volunteer />} />
+          <Route path="/partner" element={<Partner />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

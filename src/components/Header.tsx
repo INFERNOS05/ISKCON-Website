@@ -32,25 +32,27 @@ const Header = () => {
           <Link to="/" className="flex flex-col">
             <span className="font-bold text-2xl">
               <span className="text-white">PRACHETAS</span>{" "}
-              <span className="text-[#FFD700]">FOUNDATION</span>
+              <span className="text-prachetas-yellow">FOUNDATION</span>
             </span>
-            <span className="text-[#FFD700] text-sm tracking-wider font-medium">
+            <span className="text-prachetas-yellow text-sm tracking-wider font-medium">
               WHERE COMPASSION MEETS ACTION
             </span>
-          </Link>          {/* Desktop Navigation */}
+          </Link>
+
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className="text-white hover:text-[#FFD700] transition-colors font-medium"
+                className="text-white hover:text-prachetas-yellow transition-colors font-medium"
               >
                 {item.label}
               </Link>
             ))}
             <Button
               asChild
-              className="bg-[#D86C1F] text-white hover:bg-[#C35A15] transition-colors font-semibold px-6"
+              className="bg-prachetas-yellow text-prachetas-black hover:bg-prachetas-bright-yellow transition-colors font-semibold px-6"
             >
               <Link to="/donate">Donate Now</Link>
             </Button>
@@ -75,7 +77,7 @@ const Header = () => {
               <Link
                 key={item.href}
                 to={item.href}
-                className="block text-white hover:text-[#FFD700] transition-colors font-medium py-2"
+                className="block text-white hover:text-prachetas-yellow transition-colors font-medium py-2"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.label}
@@ -83,7 +85,7 @@ const Header = () => {
             ))}
             <Button
               asChild
-              className="w-full bg-[#D86C1F] text-white hover:bg-[#C35A15] transition-colors font-semibold"
+              className="w-full bg-prachetas-yellow text-prachetas-black hover:bg-prachetas-bright-yellow transition-colors font-semibold"
             >
               <Link to="/donate">Donate Now</Link>
             </Button>

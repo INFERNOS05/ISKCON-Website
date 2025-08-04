@@ -6,90 +6,98 @@
 
 @layer base {
   :root {
-    --background: 0 0% 0%; /* Black background */
-    --foreground: 36 100% 95%; /* Light amber text */
+    /* Primary Colors - Improved readability and section flow */
+    --background: 0 0% 100%; /* Pure white background */
+    --foreground: 0 0% 8%; /* Deep black for text */
+    
+    /* Card backgrounds */
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 0 0% 8%; /* Deep black text */
+    
+    /* Popover */
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    
+    /* Primary - Bright Yellow */
+    --primary: 50 100% 50%; /* #FFD700 - Golden yellow */
+    --primary-foreground: 0 0% 0%; /* Black text on yellow */
+    
+    /* Secondary - Medium gray for subtle sections */
+    --secondary: 0 0% 96%; /* Very light gray */
+    --secondary-foreground: 0 0% 8%; /* Deep black text */
+    
+    /* Muted */
+    --muted: 0 0% 94%; /* Light gray */
+    --muted-foreground: 0 0% 35%; /* Medium gray text */
+    
+    /* Accent - Golden yellow */
+    --accent: 45 100% 55%; /* Bright golden */
+    --accent-foreground: 0 0% 0%; /* Black text */
 
-    --card: 0 0% 10%; /* Very dark gray card */
-    --card-foreground: 36 100% 95%;
-
-    --popover: 0 0% 10%;
-    --popover-foreground: 36 100% 95%;    /* Gold/Amber color scheme for primary - more vibrant to match logo */
-    --primary: 45 100% 60%; /* Gold/Amber from the logo */
-    --primary-foreground: 0 0% 0%; /* Black text on amber */
-
-    /* Dark amber for secondary */
-    --secondary: 45 80% 40%;
-    --secondary-foreground: 45 100% 95%;
-
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 70%;
-
-    /* Light gold accent */
-    --accent: 45 100% 70%; /* Lighter gold */
-    --accent-foreground: 0 0% 0%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    
+    /* Destructive - Keep red but softer */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    
+    /* Border and input */
+    --border: 0 0% 90%; /* Light gray border */
+    --input: 0 0% 98%;
+    --ring: 50 100% 50%; /* Yellow focus ring */
 
     --radius: 0.5rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar colors using clean theme */
+    --sidebar-background: 0 0% 100%; /* White sidebar */
+    --sidebar-foreground: 0 0% 8%; /* Black text */
+    --sidebar-primary: 50 100% 50%; /* Yellow primary */
+    --sidebar-primary-foreground: 0 0% 0%; /* Black text */
+    --sidebar-accent: 0 0% 97%; /* Very light gray accent */
+    --sidebar-accent-foreground: 0 0% 8%; /* Black text */
+    --sidebar-border: 0 0% 92%; /* Light gray border */
+    --sidebar-ring: 50 100% 50%; /* Yellow ring */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Dark mode - Clean black with yellow accents */
+    --background: 0 0% 4%; /* Very dark background */
+    --foreground: 0 0% 95%; /* Light text */
+    
+    --card: 0 0% 8%; /* Dark gray cards */
+    --card-foreground: 0 0% 95%;
+    
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 95%;
+    
+    /* Yellow remains prominent in dark mode */
+    --primary: 50 100% 55%; /* Bright yellow */
+    --primary-foreground: 0 0% 0%;
+    
+    --secondary: 0 0% 12%; /* Dark secondary */
+    --secondary-foreground: 0 0% 95%;
+    
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 70%;
+    
+    /* Bright yellow accent in dark mode */
+    --accent: 50 100% 60%; /* Bright yellow */
+    --accent-foreground: 0 0% 0%;
+    
+    --destructive: 0 62% 52%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 20%; /* Dark border */
+    --input: 0 0% 15%;
+    --ring: 50 100% 55%;
+    
+    /* Dark mode sidebar */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 50 100% 55%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 50 100% 55%;
   }
 }
 
@@ -101,4 +109,83 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom gradient backgrounds and section utilities */
+.gradient-primary {
+  background: linear-gradient(135deg, #000000 0%, #333333 50%, #FFD700 100%);
+}
+
+.gradient-sunset {
+  background: linear-gradient(135deg, #FFD700 0%, #000000 100%);
+}
+
+.gradient-warm {
+  background: linear-gradient(135deg, #FFC107 0%, #FFD700 100%);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #FFD700, #FFC107);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hero section gradient overlay */
+.hero-gradient {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(51, 51, 51, 0.5) 50%,
+    rgba(255, 215, 0, 0.2) 100%
+  );
+}
+
+/* Section transition utilities for better visual flow */
+.section-white {
+  background-color: white;
+  color: rgb(17 24 39);
+}
+
+.section-light-gray {
+  background-color: rgb(249 250 251);
+  color: rgb(17 24 39);
+}
+
+.section-dark {
+  background-color: rgb(17 24 39);
+  color: white;
+}
+
+.section-black {
+  background-color: black;
+  color: white;
+}
+
+.section-yellow-accent {
+  background-color: rgb(254 252 232);
+  color: rgb(17 24 39);
+}
+
+/* Smooth section transitions */
+.section-transition {
+  transition: all 0.5s ease-in-out;
+}
+
+/* Section dividers for visual separation */
+.section-divider {
+  border-top: 1px solid rgb(229 231 235);
+  position: relative;
+}
+
+.section-divider::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4rem;
+  height: 0.25rem;
+  background-color: rgb(250 204 21);
+  margin-top: -0.125rem;
 }

@@ -139,7 +139,7 @@ const DonationForm = () => {
                     key={amount}
                     type="button"
                     variant={selectedAmount === amount ? "default" : "outline"}
-                    className={selectedAmount === amount ? "bg-yellow-400 text-black hover:bg-yellow-500" : ""}
+                    className={selectedAmount === amount ? "bg-prachetas-yellow text-black hover:bg-prachetas-orange" : ""}
                     onClick={() => handleAmountSelection(amount)}
                   >
                     ₹{amount}
@@ -310,8 +310,9 @@ const DonationForm = () => {
               )}
             />
 
-            <Button              type="submit"
-              className="w-full bg-yellow-400 text-black hover:bg-yellow-500"
+            <Button
+              type="submit"
+              className="w-full bg-prachetas-yellow text-black hover:bg-prachetas-orange"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Processing..." : (

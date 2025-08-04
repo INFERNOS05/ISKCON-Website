@@ -1,167 +1,205 @@
-import { useEffect, useState } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type GalleryImage, GALLERY_CATEGORIES } from "@/lib/imagekit-config";
-import { GalleryGrid } from "@/features/gallery/components/GalleryGrid";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useImageKit } from "@/features/gallery/hooks/useImageKit";
+import React, { useState, useEffect } from 'react';
+import './GallerySection.css';
 
-const GallerySection = () => {
-  const [images, setImages] = useState<Record<string, GalleryImage[]>>({
-    all: [],
-    education: [],
-    healthcare: [],
-    community: [],
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  
-  // Use the ImageKit hook
-  const { loading: ikLoading, error: ikError } = useImageKit();
+// Using the images available in the public folder
+const images = [
+  '/Copy of 19f2a1ee-42ec-4015-8100-bb731905297a.jpeg',
+  '/Copy of 9c9d2438-adde-413f-862a-31baebd1ec25.jpeg',
+  '/Copy of IMG-20250610-WA0013.jpg',
+  '/Copy of IMG-20250610-WA0020.jpg',
+  '/Copy of IMG-20250610-WA0028.jpg',
+  '/Copy of WhatsApp Image 2024-12-18 at 08.38.42.jpeg',
+  '/Copy of WhatsApp Image 2025-02-26 at 15.50.55 (1).jpeg',
+  '/Copy of WhatsApp Image 2025-02-26 at 15.50.57.jpeg',
+  '/Copy of WhatsApp Image 2025-02-26 at 15.41.35 (1).jpeg',
+  '/Copy of WhatsApp Image 2025-02-27 at 16.10.09 (1).jpeg',
+  '/Copy of WhatsApp Image 2025-02-27 at 16.15.54.jpeg',
+  '/Copy of WhatsApp Image 2025-03-04 at 17.08.10 (1).jpeg',
+];
 
+const GallerySection: React.FC = () => {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const openLightbox = (imageIndex: number) => {
+    setCurrentImageIndex(imageIndex);
+    setLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  // Handle keyboard navigation
   useEffect(() => {
-    const loadImages = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        console.log('[Gallery] Loading images for category:', selectedCategory);
-        
-        const category = GALLERY_CATEGORIES.find(cat => cat.id === selectedCategory);
-        if (!category) {
-          throw new Error(`Invalid category: ${selectedCategory}`);
-        }
-
-        // Fetch images from our backend function
-        const response = await fetch(`/api/list-images?category=${category.id}`);
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to fetch images: ${errorText}`);
-        }
-
-        const loadedImages = await response.json();
-        console.log(`[Gallery] Loaded ${loadedImages.length} images for ${category.category}`);
-        
-        setImages(current => ({
-          ...current,
-          [selectedCategory]: loadedImages
-        }));
-      } catch (err) {
-        console.error('[Gallery] Error loading images:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load gallery images');
-      } finally {
-        setLoading(false);
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!lightboxOpen) return;
+      
+      switch (e.key) {
+        case 'Escape':
+          closeLightbox();
+          break;
+        case 'ArrowRight':
+          nextImage();
+          break;
+        case 'ArrowLeft':
+          prevImage();
+          break;
       }
     };
 
-    if (!ikLoading && !ikError) {
-      loadImages();
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [lightboxOpen]);
+
+  // Prevent body scroll when lightbox is open
+  useEffect(() => {
+    if (lightboxOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
     }
-  }, [selectedCategory, ikLoading, ikError]);
-
-  const handleRetry = async () => {
-    if (ikError) {
-      // Refresh the page to reinitialize ImageKit
-      window.location.reload();
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const category = GALLERY_CATEGORIES.find(cat => cat.id === selectedCategory);
-      if (!category) return;
-
-      const response = await fetch(`/api/list-images?category=${category.id}`);
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to fetch images: ${errorText}`);
-      }
-
-      const loadedImages = await response.json();
-      setImages(current => ({
-        ...current,
-        [selectedCategory]: loadedImages
-      }));
-    } catch (err) {
-      console.error('[Gallery] Retry error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load images');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Show ImageKit initialization error if any
-  if (ikError) {
-    return (
-      <section className="py-16 px-4 md:px-8 bg-gray-50">
-        <div className="container mx-auto">
-          <Alert variant="destructive">
-            <AlertDescription>
-              Failed to initialize image service: {ikError}
-              <button
-                onClick={() => window.location.reload()}
-                className="ml-4 text-sm underline hover:no-underline"
-              >
-                Retry
-              </button>
-            </AlertDescription>
-          </Alert>
-        </div>
-      </section>
-    );
-  }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [lightboxOpen]);
 
   return (
-    <section className="py-16 px-4 md:px-8 bg-gray-50">
-      <div className="container mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">
-          Our Impact Gallery
-        </h2>
-
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>
-              {error}
-              <button
-                onClick={handleRetry}
-                className="ml-4 text-sm underline hover:no-underline"
-              >
-                Try Again
-              </button>
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        <Tabs 
-          defaultValue="all" 
-          className="w-full"
-          onValueChange={setSelectedCategory}
-        >
-          <TabsList className="flex justify-center mb-8">
-            {GALLERY_CATEGORIES.map((category) => (
-              <TabsTrigger
-                key={category.id}
-                value={category.id}
-                className="px-4 py-2"
-              >
-                {category.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          {GALLERY_CATEGORIES.map((category) => (
-            <TabsContent key={category.id} value={category.id}>
-              <GalleryGrid 
-                images={images[category.id] || []} 
-                loading={loading || ikLoading} 
-                error={error} 
-                onRetry={handleRetry}
-              />
-            </TabsContent>
-          ))}
-        </Tabs>
+    <section className="py-16 overflow-hidden">
+      <div className="container mx-auto px-4">
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4 text-gray-800">Our Gallery</h2>
+          <p className="text-gray-600 text-lg">
+            A glimpse into our community initiatives and the lives we've touched. Click any image to view it in full size.
+          </p>
+        </div>
       </div>
+
+      {/* Vertically stacked rows with continuous scrolling */}
+      <div className="flex flex-col gap-4">
+        {/* Row 1 - Slowest */}
+        <div className="scrolling-row-container">
+          <div className="scrolling-row animate-scroll-slow">
+            {[...images, ...images].map((src, index) => (
+              <button
+                key={`${src}-row1-${index}`}
+                className="gallery-image-button"
+                onClick={() => openLightbox(index % images.length)}
+                aria-label={`View image ${(index % images.length) + 1} in full size`}
+              >
+                <img
+                  src={src}
+                  alt={`Community work ${(index % images.length) + 1}`}
+                  className="gallery-image"
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Row 2 - Medium Speed */}
+        <div className="scrolling-row-container">
+          <div className="scrolling-row animate-scroll-medium">
+            {[...images.slice(4), ...images.slice(0, 4), ...images.slice(4), ...images.slice(0, 4)].map((src, index) => {
+              const imageIndex = (index + 4) % images.length;
+              return (
+                <button
+                  key={`${src}-row2-${index}`}
+                  className="gallery-image-button"
+                  onClick={() => openLightbox(imageIndex)}
+                  aria-label={`View image ${imageIndex + 1} in full size`}
+                >
+                  <img
+                    src={src}
+                    alt={`Foundation activities ${imageIndex + 1}`}
+                    className="gallery-image"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Row 3 - Fastest */}
+        <div className="scrolling-row-container">
+          <div className="scrolling-row animate-scroll-fast">
+            {[...images.slice(8), ...images.slice(0, 8), ...images.slice(8), ...images.slice(0, 8)].map((src, index) => {
+              let imageIndex;
+              if (index < 4) {
+                imageIndex = index + 8;
+              } else if (index < 12) {
+                imageIndex = index - 4;
+              } else {
+                imageIndex = (index - 12) % images.length;
+              }
+              
+              return (
+                <button
+                  key={`${src}-row3-${index}`}
+                  className="gallery-image-button"
+                  onClick={() => openLightbox(imageIndex)}
+                  aria-label={`View image ${imageIndex + 1} in full size`}
+                >
+                  <img
+                    src={src}
+                    alt={`Outreach programs ${imageIndex + 1}`}
+                    className="gallery-image"
+                  />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Lightbox Modal */}
+      {lightboxOpen && (
+        <div 
+          className="lightbox-overlay" 
+          onClick={closeLightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image lightbox"
+        >
+          <div 
+            className="lightbox-content" 
+            onClick={(e) => e.stopPropagation()}
+            role="img"
+            aria-label={`Image ${currentImageIndex + 1} of ${images.length}`}
+          >
+            <button className="lightbox-close" onClick={closeLightbox}>
+              ×
+            </button>
+            
+            <button className="lightbox-nav lightbox-prev" onClick={prevImage}>
+              ‹
+            </button>
+            
+            <img
+              src={images[currentImageIndex]}
+              alt={`Foundation work ${currentImageIndex + 1}`}
+              className="lightbox-image"
+            />
+            
+            <button className="lightbox-nav lightbox-next" onClick={nextImage}>
+              ›
+            </button>
+            
+            <div className="lightbox-counter">
+              {currentImageIndex + 1} / {images.length}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

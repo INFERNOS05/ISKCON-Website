@@ -47,42 +47,36 @@ const ProgramsSection = () => {
 
         <div className="grid md:grid-cols-3 gap-8 mb-12">
           {programs.map((program) => (
-            <Card 
-              key={program.id} 
-              className="relative overflow-hidden bg-white hover:shadow-xl transition-all duration-300 hover:transform hover:scale-105"
-            >
-              {/* Background Image */}
-              <div className="absolute inset-0">
-                <img
-                  src={program.backgroundImage}
-                  alt={`${program.title} background`}
-                  className="w-full h-full object-cover"
-                />
-                {/* Dark overlay for text readability */}
-                <div className="absolute inset-0 bg-black/60"></div>
+            <Card key={program.id} className="relative overflow-hidden h-96 group hover:scale-[1.02] transition-all duration-300 border-2 border-gray-200 hover:border-prachetas-yellow">
+              {/* Background Image with Dark Overlay */}
+              <div 
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${program.backgroundImage})` }}
+              >
+                <div className="absolute inset-0 bg-prachetas-black/75 group-hover:bg-prachetas-black/60 transition-all duration-300"></div>
               </div>
               
               {/* Content */}
-              <div className="relative z-10">
-                <CardHeader>
-                  <div className="bg-prachetas-yellow text-prachetas-black w-14 h-14 flex items-center justify-center rounded-full mb-4 shadow-lg">
-                    <program.icon className="h-7 w-7" />
+              <div className="relative z-10 h-full flex flex-col text-white">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <program.icon className="h-8 w-8 text-prachetas-yellow" />
+                    <Badge variant="secondary" className="bg-prachetas-yellow text-prachetas-black font-semibold">
+                      {program.category}
+                    </Badge>
                   </div>
-                  <Badge className="mb-2 bg-prachetas-yellow text-prachetas-black hover:bg-yellow-300">
-                    {program.category}
-                  </Badge>
-                  <CardTitle className="text-white text-2xl">{program.title}</CardTitle>
-                  <CardDescription className="text-gray-200 text-base">
+                  <CardTitle className="text-2xl font-bold text-white group-hover:text-prachetas-yellow transition-colors">
+                    {program.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <CardDescription className="text-gray-300 text-base leading-relaxed">
                     {program.description}
                   </CardDescription>
-                </CardHeader>
-                <CardFooter>
-                  <Button 
-                    asChild 
-                    variant="outline"
-                    className="w-full border-2 border-prachetas-yellow bg-prachetas-yellow/20 text-white hover:bg-prachetas-yellow hover:text-prachetas-black transition-colors backdrop-blur-sm"
-                  >
-                    <Link to={program.link} className="flex items-center justify-center">
+                </CardContent>
+                <CardFooter className="pt-2">
+                  <Button asChild className="w-full bg-prachetas-yellow text-prachetas-black hover:bg-prachetas-bright-yellow transition-colors font-semibold">
+                    <Link to={program.link}>
                       Learn More <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -93,11 +87,8 @@ const ProgramsSection = () => {
         </div>
 
         <div className="text-center">
-          <Button 
-            asChild 
-            size="lg"
-            className="bg-prachetas-black text-prachetas-yellow hover:bg-prachetas-dark-gray transition-colors px-8 py-6 text-lg font-semibold"
-          >
+          <Button asChild size="lg" variant="outline" 
+            className="border-2 border-prachetas-yellow text-prachetas-yellow hover:bg-prachetas-yellow hover:text-prachetas-black transition-colors px-8 py-3 font-semibold">
             <Link to="/programs">
               View All Programs <ArrowRight className="ml-2 h-5 w-5" />
             </Link>

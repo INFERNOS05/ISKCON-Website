@@ -63,39 +63,41 @@ const GetInvolvedPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gray-100">
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-20 bg-[#0A0F1A] text-white">
+      <section className="relative py-20 bg-prachetas-black text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Get Involved</h1>
-            <p className="text-xl text-gray-200 mb-8 leading-relaxed">
-              Join us in our mission to create positive change. There are many ways
-              you can contribute to making a difference in people's lives.
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-prachetas-yellow">Get Involved</h1>
+            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
+              Join our mission to create lasting change in communities. Whether through volunteering,
+              partnerships, or support, there are many ways to make a difference.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Opportunities Section */}
-      <section className="py-16 bg-black">
+      {/* Opportunities */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4 text-prachetas-black">Ways to Get Involved</h2>
+            <p className="text-prachetas-medium-gray text-lg">
+              Choose how you'd like to contribute to our mission and make an impact
+            </p>
+          </div>
           <div className="grid md:grid-cols-3 gap-8">
             {opportunities.map((opportunity, index) => (
-              <div key={index} className="bg-[#111827] rounded-xl p-8 transform transition-all duration-300 hover:scale-[1.02]">
-                <div className="flex items-center mb-6">
-                  <opportunity.icon className="h-8 w-8 text-[#FFD700] mr-4" />
-                  <h2 className="text-2xl font-bold text-white">{opportunity.title}</h2>
-                </div>
-                <p className="text-gray-200 text-lg mb-6 leading-relaxed">
-                  {opportunity.description}
-                </p>
-                <ul className="space-y-3">
+              <div key={opportunity.title} className="bg-prachetas-black rounded-xl p-8 shadow-lg border border-gray-800 hover:transform hover:scale-[1.02] transition-all duration-300">
+                <opportunity.icon className="h-12 w-12 text-prachetas-yellow mb-6 mx-auto" />
+                <h3 className="text-2xl font-bold text-prachetas-yellow mb-4 text-center">{opportunity.title}</h3>
+                <p className="text-gray-300 mb-6 leading-relaxed">{opportunity.description}</p>
+                <ul className="space-y-2">
                   {opportunity.actions.map((action, idx) => (
-                    <li key={idx} className="flex items-start text-gray-200">
-                      <span className="text-[#FFD700] mr-2">•</span>
+                    <li key={`${opportunity.title}-${idx}`} className="flex items-start text-gray-300">
+                      <span className="text-prachetas-yellow mr-2 mt-1">•</span>
                       {action}
                     </li>
                   ))}
@@ -107,24 +109,29 @@ const GetInvolvedPage = () => {
       </section>
 
       {/* Upcoming Events */}
-      <section className="py-16 bg-[#0A0F1A]">
+      <section className="py-16 bg-gray-100">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-12 text-center text-white">Upcoming Events</h2>
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4 text-prachetas-black">Upcoming Events</h2>
+            <p className="text-prachetas-medium-gray text-lg">
+              Join us at these upcoming events and be part of the change
+            </p>
+          </div>
           <div className="grid md:grid-cols-3 gap-8">
             {upcomingEvents.map((event, index) => (
-              <div key={index} className="bg-[#111827] rounded-xl p-8 transform transition-all duration-300 hover:scale-[1.02]">
-                <div className="flex items-center mb-4 text-[#FFD700]">
+              <div key={`${event.title}-${index}`} className="bg-white rounded-xl p-8 transform transition-all duration-300 hover:scale-[1.02] shadow-lg border border-gray-200">
+                <div className="flex items-center mb-4 text-prachetas-yellow">
                   <Calendar className="h-5 w-5 mr-2" />
-                  <span>{event.date}</span>
+                  <span className="font-medium">{event.date}</span>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">{event.title}</h3>
-                <div className="flex items-center mb-4 text-gray-300">
+                <h3 className="text-xl font-bold text-prachetas-black mb-2">{event.title}</h3>
+                <div className="flex items-center mb-4 text-prachetas-medium-gray">
                   <Clock className="h-4 w-4 mr-2" />
                   <span>{event.location}</span>
                 </div>
-                <p className="text-gray-200">{event.description}</p>
-                <Button className="w-full mt-6 bg-[#FFD700] text-black hover:bg-[#E5C100]">
-                  Register Now
+                <p className="text-prachetas-medium-gray mb-6">{event.description}</p>
+                <Button asChild className="w-full bg-prachetas-yellow text-prachetas-black hover:bg-prachetas-bright-yellow border-none">
+                  <Link to="/volunteer">Register Now</Link>
                 </Button>
               </div>
             ))}
@@ -133,18 +140,18 @@ const GetInvolvedPage = () => {
       </section>
 
       {/* Contact CTA */}
-      <section className="py-16 bg-black text-white">
+      <section className="py-16 bg-prachetas-black text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Ready to Make a Difference?</h2>
-          <p className="text-xl text-gray-200 mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold mb-6 text-prachetas-yellow">Ready to Make a Difference?</h2>
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
             Contact us to learn more about how you can get involved and contribute
             to creating positive change in our communities.
           </p>
           <div className="flex justify-center gap-4">
-            <Button asChild size="lg" className="bg-[#FFD700] text-black hover:bg-[#E5C100]">
+            <Button asChild size="lg" className="bg-prachetas-yellow text-prachetas-black hover:bg-prachetas-bright-yellow border-none">
               <Link to="/contact">Contact Us</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-[#FFD700] text-[#FFD700] hover:bg-[#FFD700] hover:text-black">
+            <Button asChild size="lg" variant="outline" className="border-prachetas-yellow text-prachetas-yellow hover:bg-prachetas-yellow hover:text-prachetas-black">
               <a href="mailto:prachetasfoundation@gmail.com">
                 <Mail className="mr-2 h-5 w-5" />
                 Email Us
