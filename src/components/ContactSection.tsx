@@ -23,7 +23,7 @@ const ContactSection = () => {
                 <MapPin className="mr-4 h-6 w-6 text-prachetas-yellow shrink-0 mt-1" />
                 <div>
                   <h4 className="font-semibold mb-1 text-prachetas-black">Main Office</h4>
-                  <p className="text-prachetas-medium-gray">Regd Office: Ganga Panama, Pimple Nilakh, Pune 411027</p>
+                  <p className="text-prachetas-medium-gray">HQPJ+97R, Vishal Nagar, Pimple Nilakh, Pimpri-Chinchwad, Maharashtra 411027</p>
                 </div>
               </div>
               

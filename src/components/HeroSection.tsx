@@ -68,7 +68,7 @@ const HeroSection = () => {
           <div className="flex flex-wrap gap-6 justify-center mb-8">
             <Button asChild size="lg" 
               className="bg-prachetas-yellow text-black hover:bg-yellow-300 transition-colors px-8 py-6 text-lg font-semibold">
-              <Link to="/get-involved">
+              <Link to="/donate">
                 Join Our Mission <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>

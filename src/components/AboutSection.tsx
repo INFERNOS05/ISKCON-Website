@@ -31,7 +31,7 @@ const AboutSection = () => {
                 </Button>
                 <Button asChild
                   className="bg-prachetas-black text-prachetas-yellow hover:bg-prachetas-dark-gray transition-colors font-semibold px-6 py-3">
-                  <Link to="/team">
+                  <Link to="/about#team">
                     Meet Our Team <ChevronRight className="ml-1 h-5 w-5" />
                   </Link>
                 </Button>
