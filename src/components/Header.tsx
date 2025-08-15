@@ -12,7 +12,6 @@ const navItems: NavItem[] = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
   { href: "/programs", label: "Our Programs" },
-  { href: "/impact", label: "Our Impact" },
   { href: "/get-involved", label: "Get Involved" },
   { href: "/contact", label: "Contact" },
 ];

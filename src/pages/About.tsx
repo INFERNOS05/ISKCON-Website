@@ -275,7 +275,7 @@ const AboutPage = () => {
       </section>
 
       {/* Team Section */}
-      <section className="py-16 bg-gray-100 text-prachetas-medium-gray">
+      <section id="team" className="py-16 bg-gray-100 text-prachetas-medium-gray">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold mb-12 text-center text-prachetas-black">Our Team</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">

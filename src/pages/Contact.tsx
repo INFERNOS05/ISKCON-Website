@@ -27,8 +27,8 @@ const ContactPage = () => {
       icon: MapPin,
       title: "Address",
       details: [
-        "123, NGO Complex",
-        "Mumbai, Maharashtra - 400001"
+        "HQPJ+97R, Vishal Nagar, Pimple Nilakh",
+        "Pimpri-Chinchwad, Maharashtra 411027"
       ]
     },
     {
@@ -42,15 +42,15 @@ const ContactPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gray-50">
       <Header />
       
       {/* Hero Section */}
-      <section className="relative py-20 bg-[#0A0F1A] text-white">
+      <section className="relative py-20 bg-prachetas-black text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Contact Us</h1>
-            <p className="text-xl text-gray-200 mb-8 leading-relaxed">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 text-prachetas-yellow">Contact Us</h1>
+            <p className="text-xl text-gray-300 mb-8 leading-relaxed">
               We'd love to hear from you. Reach out to us for any queries,
               collaborations, or to learn more about our work.
             </p>
@@ -59,17 +59,17 @@ const ContactPage = () => {
       </section>
 
       {/* Contact Information */}
-      <section className="py-16 bg-black">
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             {contactInfo.map((info, index) => (
-              <div key={index} className="bg-[#111827] rounded-xl p-8 transform transition-all duration-300 hover:scale-[1.02]">
+              <div key={index} className="bg-white rounded-xl p-8 shadow-lg border-2 border-gray-200 transform transition-all duration-300 hover:scale-[1.02]">
                 <div className="flex items-center mb-6">
-                  <info.icon className="h-8 w-8 text-[#FFD700]" />
+                  <info.icon className="h-8 w-8 text-prachetas-yellow" />
                 </div>
-                <h2 className="text-xl font-bold text-white mb-4">{info.title}</h2>
+                <h2 className="text-xl font-bold text-prachetas-black mb-4">{info.title}</h2>
                 {info.details.map((detail, idx) => (
-                  <p key={idx} className="text-gray-200">{detail}</p>
+                  <p key={idx} className="text-prachetas-medium-gray">{detail}</p>
                 ))}
               </div>
             ))}
@@ -78,53 +78,53 @@ const ContactPage = () => {
       </section>
 
       {/* Contact Form */}
-      <section className="py-16 bg-[#0A0F1A]">
+      <section className="py-16 bg-gray-100">
         <div className="container mx-auto px-4">
-          <div className="max-w-2xl mx-auto bg-[#111827] rounded-xl p-8">
-            <h2 className="text-2xl font-bold text-white mb-8">Send us a Message</h2>
+          <div className="max-w-2xl mx-auto bg-prachetas-black rounded-xl p-8 shadow-lg">
+            <h2 className="text-2xl font-bold text-prachetas-yellow mb-8">Send us a Message</h2>
             <form className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Full Name
                   </label>
                   <Input 
                     type="text"
-                    className="bg-black border-gray-700 text-white"
+                    className="bg-white text-prachetas-black border-gray-300"
                     placeholder="Your name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-200 mb-2">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
                     Email
                   </label>
                   <Input 
                     type="email"
-                    className="bg-black border-gray-700 text-white"
+                    className="bg-white text-prachetas-black border-gray-300"
                     placeholder="your@email.com"
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-200 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Subject
                 </label>
                 <Input 
                   type="text"
-                  className="bg-black border-gray-700 text-white"
+                  className="bg-white text-prachetas-black border-gray-300"
                   placeholder="How can we help?"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-200 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   Message
                 </label>
                 <Textarea 
-                  className="bg-black border-gray-700 text-white h-32"
+                  className="bg-white text-prachetas-black border-gray-300 h-32"
                   placeholder="Your message..."
                 />
               </div>
-              <Button className="w-full bg-[#FFD700] text-black hover:bg-[#E5C100]">
+              <Button className="w-full bg-prachetas-yellow text-prachetas-black hover:bg-prachetas-bright-yellow transition-colors font-semibold">
                 <Send className="mr-2 h-5 w-5" />
                 Send Message
               </Button>
@@ -134,13 +134,24 @@ const ContactPage = () => {
       </section>
 
       {/* Map Section */}
-      <section className="py-16 bg-black">
+            {/* Map Section */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <div className="aspect-w-16 aspect-h-9 rounded-xl overflow-hidden">
-            {/* Replace with actual map implementation */}
-            <div className="bg-[#111827] w-full h-[400px] flex items-center justify-center">
-              <p className="text-gray-200">Map will be embedded here</p>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-prachetas-black">Find Us Here</h2>
+            <p className="text-prachetas-medium-gray mt-2">Our main office is located in Pune. We welcome you to visit us.</p>
+          </div>
+          <div className="h-[600px] rounded-xl overflow-hidden shadow-lg border-2 border-gray-200">
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3781.8393601194985!2d73.79251147599615!3d18.580284882525492!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bc2b906c4b4b4b1%3A0x1234567890abcdef!2sHQPJ%2B97R%2C%20Vishal%20Nagar%2C%20Pimple%20Nilakh%2C%20Pimpri-Chinchwad%2C%20Maharashtra%20411027!5e0!3m2!1sen!2sin!4v1691123456789!5m2!1sen!2sin"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen={true}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="PRACHETAS Foundation Location - HQPJ+97R, Vishal Nagar, Pimple Nilakh"
+            ></iframe>
           </div>
         </div>
       </section>
