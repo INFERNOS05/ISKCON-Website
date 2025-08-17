@@ -6,12 +6,19 @@ const sql = neon(process.env.NETLIFY_DATABASE_URL);
 const { sendDonationReceipt } = require('./email.cjs');
 
 exports.handler = async function(event, context) {
+  console.log('Donation function called:', {
+    method: event.httpMethod,
+    body: event.body,
+    query: event.queryStringParameters
+  });
+
   if (event.httpMethod === 'OPTIONS') {
+    console.log('OPTIONS preflight received');
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+        'Access-Control-Allow-Methods': 'POST, GET, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
       body: '',
@@ -24,12 +31,19 @@ exports.handler = async function(event, context) {
       if (!donationData.donorName || !donationData.donorEmail || !donationData.amount) {
         return {
           statusCode: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          },
           body: JSON.stringify({ success: false, error: 'Missing required donation fields' })
         };
       }
+      console.log('Parsed donationData:', donationData);
+      
       const result = await sql`
         INSERT INTO donations (
-          donor_name, donor_email, donor_phone, pan_card, address, amount, currency, payment_type, payment_id, subscription_id, message, status, created_at
+          donor_name, donor_email, donor_phone, pan_card, address, amount, currency, 
+          payment_type, payment_id, subscription_id, message, status, 
+          created_at, receive_updates, payment_method
         ) VALUES (
           ${donationData.donorName},
           ${donationData.donorEmail},
@@ -38,25 +52,33 @@ exports.handler = async function(event, context) {
           ${donationData.address || null},
           ${donationData.amount},
           ${donationData.currency || 'INR'},
-          ${donationData.paymentType || null},
+          ${donationData.paymentType || 'one-time'},
           ${donationData.paymentId || null},
           ${donationData.subscriptionId || null},
           ${donationData.message || null},
-          ${donationData.status || 'completed'},
-          ${new Date().toISOString()}
+          ${donationData.status || 'pending'},
+          ${donationData.createdAt || new Date().toISOString()},
+          ${donationData.receiveUpdates || false},
+          ${donationData.paymentMethod || 'credit-card'}
         ) RETURNING *;
       `;
 
-      // Send email receipt after saving donation
-      const emailResult = await sendDonationReceipt({
-        donorName: donationData.donorName,
-        donorEmail: donationData.donorEmail,
-        amount: donationData.amount,
-        transactionId: donationData.paymentId || result[0].payment_id || 'N/A',
-        donationType: donationData.paymentType || 'one-time',
-        date: new Date().toLocaleString(),
-        message: donationData.message || ''
-      });
+      console.log('Donation saved to DB:', result);
+
+      // Only send email if donation is completed, not for pending status
+      let emailResult = null;
+      if (donationData.status === 'completed') {
+        emailResult = await sendDonationReceipt({
+          donorName: donationData.donorName,
+          donorEmail: donationData.donorEmail,
+          amount: donationData.amount,
+          transactionId: donationData.paymentId || result[0].payment_id || 'N/A',
+          donationType: donationData.paymentType || 'one-time',
+          date: new Date().toLocaleString(),
+          message: donationData.message || ''
+        });
+        console.log('Email result:', emailResult);
+      }
 
       return {
         statusCode: 200,
@@ -66,6 +88,7 @@ exports.handler = async function(event, context) {
         body: JSON.stringify({ success: true, donation: result[0], email: emailResult })
       };
     } catch (error) {
+      console.error('Error in POST /donations:', error);
       return {
         statusCode: 500,
         headers: {
@@ -76,8 +99,82 @@ exports.handler = async function(event, context) {
     }
   }
 
+  if (event.httpMethod === 'PATCH') {
+    try {
+      const updateData = JSON.parse(event.body);
+      console.log('PATCH donation update:', updateData);
+      
+      if (!updateData.donationId) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          },
+          body: JSON.stringify({ success: false, error: 'Missing donation ID' })
+        };
+      }
+
+      // Update donation status
+      const result = await sql`
+        UPDATE donations 
+        SET 
+          status = ${updateData.status},
+          payment_id = COALESCE(${updateData.paymentId}, payment_id),
+          updated_at = ${updateData.updatedAt || new Date().toISOString()}
+        WHERE id = ${updateData.donationId}
+        RETURNING *;
+      `;
+
+      if (result.length === 0) {
+        return {
+          statusCode: 404,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          },
+          body: JSON.stringify({ success: false, error: 'Donation not found' })
+        };
+      }
+
+      console.log('Donation updated:', result[0]);
+
+      // Send email receipt if status is now completed and we have payment ID
+      let emailResult = null;
+      if (updateData.status === 'completed' && updateData.paymentId) {
+        const donation = result[0];
+        emailResult = await sendDonationReceipt({
+          donorName: donation.donor_name,
+          donorEmail: donation.donor_email,
+          amount: donation.amount,
+          transactionId: updateData.paymentId,
+          donationType: donation.payment_type || 'one-time',
+          date: new Date().toLocaleString(),
+          message: donation.message || ''
+        });
+        console.log('Completion email result:', emailResult);
+      }
+
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+        body: JSON.stringify({ success: true, donation: result[0], email: emailResult })
+      };
+    } catch (error) {
+      console.error('Error in PATCH /donations:', error);
+      return {
+        statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+        },
+        body: JSON.stringify({ success: false, error: error.message || 'Failed to update donation' })
+      };
+    }
+  }
+
   if (event.httpMethod === 'GET') {
     try {
+      console.log('GET donations called:', event.queryStringParameters);
       const page = parseInt(event.queryStringParameters.page) || 1;
       const pageSize = parseInt(event.queryStringParameters.pageSize) || 10;
       const offset = (page - 1) * pageSize;
@@ -86,6 +183,7 @@ exports.handler = async function(event, context) {
       `;
       const totalCountResult = await sql`SELECT COUNT(*) FROM donations;`;
       const totalCount = parseInt(totalCountResult[0].count);
+      console.log('Fetched donations:', donations.length);
       return {
         statusCode: 200,
         headers: {
@@ -101,6 +199,7 @@ exports.handler = async function(event, context) {
         })
       };
     } catch (error) {
+      console.error('Error in GET /donations:', error);
       return {
         statusCode: 500,
         headers: {
@@ -119,3 +218,4 @@ exports.handler = async function(event, context) {
     body: JSON.stringify({ success: false, error: 'Method Not Allowed' })
   };
 }
+x`x`

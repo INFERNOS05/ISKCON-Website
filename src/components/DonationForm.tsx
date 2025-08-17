@@ -67,7 +67,6 @@ const DonationForm = () => {
   const [donationError, setDonationError] = useState<string | null>(null);
   const [apiCallStatus, setApiCallStatus] = useState<string>("");
   const [lastApiResponse, setLastApiResponse] = useState<any>(null);
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -84,200 +83,145 @@ const DonationForm = () => {
     },
   });
 
-  const handleAmountSelection = (value: string) => {
-    setSelectedAmount(value);
-    form.setValue("amount", value);
-  };
-
-  const handlePaymentSuccess = async (values: z.infer<typeof formSchema>, paymentId?: string, subscriptionId?: string) => {
-    console.log('handlePaymentSuccess called', { values, paymentId, subscriptionId });
-    setLastPaymentDetails({ values, paymentId, subscriptionId });
-    setIsSuccess(true);
-  };
-
-  const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || '';
-
-  // Add Razorpay payment handler
-  const handleRazorpayPayment = async (values: z.infer<typeof formSchema>) => {
-    console.log('handleRazorpayPayment called', values);
-    setIsSubmitting(true);
+  // Handle Razorpay payment
+  const handleRazorpayPayment = async (donationId?: string) => {
     try {
-      // Simulate payment success for testing (bypass Razorpay)
-      setTimeout(() => {
-        console.log('Simulating payment success...');
-        handlePaymentSuccess(values, 'test_payment_id', 'test_subscription_id');
-      }, 1000);
+      // Implement Razorpay payment logic here
+      // This is a placeholder - replace with actual Razorpay integration
+      console.log('Initiating Razorpay payment for donation ID:', donationId);
+      
+      // Simulate payment process
+      const paymentSuccessful = Math.random() > 0.3; // 70% success rate for demo
+      
+      if (paymentSuccessful) {
+        // Update donation status to 'completed'
+        await updateDonationStatus(donationId!, 'completed', 'payment_' + Date.now());
+        alert('Payment successful! Thank you for your donation.');
+        setIsSuccess(true);
+      } else {
+        // Update donation status to 'failed'
+        await updateDonationStatus(donationId!, 'failed');
+        alert('Payment failed. Please try again.');
+      }
     } catch (error) {
-      console.error('Payment error:', error);
-      setIsSubmitting(false);
+      console.error('Payment processing error:', error);
+      if (donationId) {
+        await updateDonationStatus(donationId, 'failed');
+      }
+      alert('Payment processing failed. Please try again.');
+    }
+  };
+
+  // Handle amount selection
+  const handleAmountSelection = (amount: number) => {
+    setSelectedAmount(amount.toString());
+    form.setValue('amount', amount.toString());
+  };
+
+  // Update donation status after payment
+  const updateDonationStatus = async (donationId: string, status: string, paymentId?: string) => {
+    try {
+      const apiUrl = `/.netlify/functions/donations`;
+      const response = await fetch(apiUrl, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          donationId,
+          status,
+          paymentId,
+          updatedAt: new Date().toISOString(),
+        }),
+      });
+      
+      const result = await response.json();
+      console.log('Donation status updated:', result);
+      return result;
+    } catch (error) {
+      console.error('Error updating donation status:', error);
+      throw error;
     }
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log('onSubmit called', values);
+    console.log('[DonationForm] onSubmit called', values);
+    console.log('[DonationForm] Current window location:', window.location.href);
     setIsSubmitting(true);
     setDonationError(null);
-    setApiCallStatus("Making API call...");
-    
-    // For production, detect the current domain
-    const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-      ? 'http://localhost:8888' 
-      : `https://${window.location.hostname}`;
-    
-    const apiUrl = `${baseUrl}/.netlify/functions/donations`;
-    setApiCallStatus(`Calling: ${apiUrl}`);
-    
-    // Save donation to database immediately
-    fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        donorName: values.fullName,
-        donorEmail: values.email,
-        donorPhone: values.phoneNumber || null,
-        amount: parseFloat(values.amount),
-        currency: 'INR',
-        paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
-        message: values.message || null,
-        status: 'initiated', // status before payment
-        panCard: values.panCard || null,
-        address: values.address || null,
-        paymentId: null,
-        subscriptionId: null
-      }),
-    })
-      .then(async (response) => {
-        console.log('Donation request sent, status:', response.status);
-        setApiCallStatus(`API Response: ${response.status} ${response.statusText}`);
-        const result = await response.json();
-        console.log('Donation response:', result);
-        setLastApiResponse(result);
-        if (!result.success) {
-          setDonationError(result.error || 'Failed to save donation');
-          setApiCallStatus(`API Error: ${result.error}`);
-        } else {
-          setApiCallStatus(`✅ Success! Donation ID: ${result.donation?.id}`);
-        }
-      })
-      .catch((error) => {
-        console.error('Error saving donation:', error);
-        setDonationError('Network error: ' + error.message);
-        setApiCallStatus(`❌ Network Error: ${error.message}`);
-      })
-      .finally(() => {
-        setIsSubmitting(false);
-        // Continue to payment simulation
-        handleRazorpayPayment(values);
-      });
-  };
+    setApiCallStatus("Saving donation to database...");
 
-  if (isSuccess) {
-    // On success page mount, call backend to save donation if not already done
-    const [apiCallStatus, setApiCallStatus] = useState("");
-    const [lastApiResponse, setLastApiResponse] = useState<any>(null);
-    React.useEffect(() => {
-      if (lastPaymentDetails) {
-        setIsSubmitting(true);
-        setDonationError(null);
-        setApiCallStatus("Making API call after payment...");
-        const baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'http://localhost:8888'
-          : `https://${window.location.hostname}`;
-        const apiUrl = `${baseUrl}/.netlify/functions/donations`;
-        setApiCallStatus(`Calling: ${apiUrl}`);
-        fetch(apiUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            donorName: lastPaymentDetails.values.fullName,
-            donorEmail: lastPaymentDetails.values.email,
-            donorPhone: lastPaymentDetails.values.phoneNumber || null,
-            amount: parseFloat(lastPaymentDetails.values.amount),
-            currency: 'INR',
-            paymentType: lastPaymentDetails.values.donationType === 'one-time' ? 'one-time' : 'monthly',
-            message: lastPaymentDetails.values.message || null,
-            status: 'completed',
-            panCard: lastPaymentDetails.values.panCard || null,
-            address: lastPaymentDetails.values.address || null,
-            paymentId: lastPaymentDetails.paymentId || null,
-            subscriptionId: lastPaymentDetails.subscriptionId || null
-          }),
-        })
-          .then(async (response) => {
-            setApiCallStatus(`API Response: ${response.status} ${response.statusText}`);
-            const result = await response.json();
-            setLastApiResponse(result);
-            if (!result.success) {
-              setDonationError(result.error || 'Failed to save donation');
-              setApiCallStatus(`API Error: ${result.error}`);
-            } else {
-              setApiCallStatus(`✅ Success! Donation ID: ${result.donation?.id}`);
-            }
-          })
-          .catch((error) => {
-            setDonationError('Network error: ' + error.message);
-            setApiCallStatus(`❌ Network Error: ${error.message}`);
-          })
-          .finally(() => {
-            setIsSubmitting(false);
-          });
+    // Always use relative path for Netlify Functions in production
+    const apiUrl = `/.netlify/functions/donations`;
+    setApiCallStatus(`Calling: ${apiUrl}`);
+    console.log('[DonationForm] API URL:', apiUrl);
+
+    // Create donation record FIRST, regardless of payment status
+    const donationData = {
+      donorName: values.fullName,
+      donorEmail: values.email,
+      donorPhone: values.phoneNumber || null,
+      amount: parseFloat(values.amount),
+      currency: 'INR',
+      paymentType: values.donationType === 'one-time' ? 'one-time' : 'monthly',
+      message: values.message || null,
+      status: 'pending', // Start with pending status
+      panCard: values.panCard || null,
+      address: values.address || null,
+      paymentId: null,
+      subscriptionId: null,
+      createdAt: new Date().toISOString(),
+      receiveUpdates: values.receiveUpdates,
+      paymentMethod: values.paymentMethod,
+    };
+
+    console.log('[DonationForm] About to save donation:', donationData);
+
+    try {
+      // Step 1: Save donation to database first
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(donationData),
+      });
+      
+      console.log('[DonationForm] Donation save request sent, status:', response.status);
+      setApiCallStatus(`Database save response: ${response.status} ${response.statusText}`);
+      
+      const result = await response.json();
+      console.log('[DonationForm] Donation save response:', result);
+      setLastApiResponse(result);
+      
+      if (!result.success) {
+        setDonationError(result.error || 'Failed to save donation');
+        setApiCallStatus(`❌ Database save failed: ${result.error}`);
+        setIsSubmitting(false);
+        return; // Don't proceed to payment if database save fails
       }
-    }, [lastPaymentDetails]);
-    return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardContent className="pt-6">
-          <div className="text-center py-10">
-            <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
-              <Check className="h-8 w-8 text-yellow-600" />
-            </div>
-            <h2 className="text-2xl font-bold mb-4">Thank You For Your Donation!</h2>
-            <p className="text-gray-600 mb-6">
-              Your generosity helps us continue our mission to create sustainable technology solutions for communities in need.
-            </p>
-            <p className="text-gray-600 mb-8">
-              A confirmation email has been sent to your email address.
-            </p>
-            {/* Debug info for donation API call */}
-            <div className="bg-gray-100 rounded p-3 mb-4 text-left text-xs text-gray-700">
-              <strong>Debug Info:</strong><br />
-              Donation API call attempted: {lastPaymentDetails ? 'Yes' : 'No'}<br />
-              API Status: {apiCallStatus}<br />
-              {lastApiResponse && (
-                <>
-                  Last Response: {JSON.stringify(lastApiResponse, null, 2)}<br />
-                </>
-              )}
-              {lastPaymentDetails && (
-                <>
-                  Payment ID: {lastPaymentDetails.paymentId || 'N/A'}<br />
-                  Subscription ID: {lastPaymentDetails.subscriptionId || 'N/A'}<br />
-                  Donor Name: {lastPaymentDetails.values.fullName}<br />
-                  Donor Email: {lastPaymentDetails.values.email}<br />
-                  Amount: {lastPaymentDetails.values.amount}<br />
-                </>
-              )}
-              {donationError && (
-                <span className="text-red-600">Error: {donationError}</span>
-              )}
-            </div>
-            <Button onClick={() => {
-              setIsSuccess(false);
-              form.reset();
-              setLastPaymentDetails(null);
-              setDonationError(null);
-              setApiCallStatus("");
-              setLastApiResponse(null);
-            }}>
-              Make Another Donation
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
+      
+      const donationId = result.donation?.id;
+      setApiCallStatus(`✅ Donation saved! ID: ${donationId}. Proceeding to payment...`);
+      
+      // Step 2: Store payment details for success page
+      setLastPaymentDetails({
+        values,
+        paymentId: undefined,
+        subscriptionId: undefined,
+      });
+      
+      // Step 3: Proceed to payment processing
+      await handleRazorpayPayment(donationId);
+      
+    } catch (error) {
+      console.error('[DonationForm] Error saving donation:', error);
+      setDonationError('Network error: ' + (error.message || error));
+      setApiCallStatus(`❌ Network Error: ${(error.message || error)}`);
+      alert('Failed to save donation to database: ' + (error.message || error));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -301,7 +245,7 @@ const DonationForm = () => {
                       type="button"
                       variant={selectedAmount === amount ? "default" : "outline"}
                       className={selectedAmount === amount ? "bg-prachetas-yellow text-black hover:bg-prachetas-orange" : ""}
-                      onClick={() => handleAmountSelection(amount)}
+                      onClick={() => handleAmountSelection(Number(amount))}
                     >
                       ₹{amount}
                     </Button>
