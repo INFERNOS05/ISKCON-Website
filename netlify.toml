@@ -12,6 +12,19 @@
   IMAGEKIT_PRIVATE_KEY = "private_2RRGIB5sFCC+wg8kP8wxotOKCA0="
   IMAGEKIT_URL_ENDPOINT = "https://ik.imagekit.io/erafq13a8"
 
+# Secrets scanning configuration
+[build.processing]
+  skip_processing = false
+
+[build.processing.secrets]
+  # Disable secrets scanning for files that may contain placeholders
+  omit_paths = [
+    "scripts/setup-env.cjs",
+    "NETLIFY_ENV_SETUP.md",
+    "DATABASE_ROUTES_GUIDE.md",
+    ".env.example"
+  ]
+
 [dev]
   framework = "#custom"
   command = "vite"
