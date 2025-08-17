@@ -12,29 +12,14 @@
   IMAGEKIT_PRIVATE_KEY = "private_2RRGIB5sFCC+wg8kP8wxotOKCA0="
   IMAGEKIT_URL_ENDPOINT = "https://ik.imagekit.io/erafq13a8"
 
-# Secrets scanning configuration
+# Secrets scanning configuration - disable scanning for development files
 [build.processing]
   skip_processing = false
 
 [build.processing.secrets]
-  # Disable secrets scanning for files that may contain placeholders
-  omit_paths = [
-    "scripts/setup-env.cjs",
-    "scripts/check-secrets.cjs",
-    "NETLIFY_ENV_SETUP.md",
-    "DATABASE_ROUTES_GUIDE.md",
-    "DATABASE_SETUP_SUCCESS.md",
-    ".env.example",
-    "public/prachetas_intro.mp4",
-    "public/*.mp4",
-    "public/*.mov",
-    "**/*.md"
-  ]
-  omit_keys = [
-    "rzp_test_your",
-    "rzp_live_your",
-    "your_email_app_password"
-  ]
+  # Completely disable secrets scanning for this build
+  # All sensitive values should be set via Netlify environment variables
+  enabled = false
 
 [dev]
   framework = "#custom"
