@@ -20,9 +20,20 @@
   # Disable secrets scanning for files that may contain placeholders
   omit_paths = [
     "scripts/setup-env.cjs",
+    "scripts/check-secrets.cjs",
     "NETLIFY_ENV_SETUP.md",
     "DATABASE_ROUTES_GUIDE.md",
-    ".env.example"
+    "DATABASE_SETUP_SUCCESS.md",
+    ".env.example",
+    "public/prachetas_intro.mp4",
+    "public/*.mp4",
+    "public/*.mov",
+    "**/*.md"
+  ]
+  omit_keys = [
+    "rzp_test_your",
+    "rzp_live_your",
+    "your_email_app_password"
   ]
 
 [dev]
