@@ -115,11 +115,46 @@ exports.handler = async function(event, context) {
       }
 
       // Update donation status
+      console.log('PATCH donation update:', updateData);
+      
+      // Build dynamic update query
+      let updateSetClause = [];
+      let hasUpdates = false;
+
+      if (updateData.status !== undefined) {
+        updateSetClause.push('status = ' + sql`${updateData.status}`);
+        hasUpdates = true;
+      }
+
+      if (updateData.paymentId !== undefined) {
+        updateSetClause.push('payment_id = ' + sql`${updateData.paymentId}`);
+        hasUpdates = true;
+      }
+
+      if (updateData.subscriptionId !== undefined) {
+        updateSetClause.push('subscription_id = ' + sql`${updateData.subscriptionId}`);
+        hasUpdates = true;
+      }
+
+      // Always update timestamp
+      updateSetClause.push('updated_at = ' + sql`${updateData.updatedAt || new Date().toISOString()}`);
+
+      if (!hasUpdates) {
+        return {
+          statusCode: 400,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+          },
+          body: JSON.stringify({ success: false, error: 'No valid update fields provided' })
+        };
+      }
+
       const result = await sql`
         UPDATE donations 
         SET 
-          status = ${updateData.status},
-          payment_id = COALESCE(${updateData.paymentId}, payment_id),
+          status = ${updateData.status || sql`status`},
+          payment_id = ${updateData.paymentId || sql`payment_id`},
+          subscription_id = ${updateData.subscriptionId || sql`subscription_id`},
           updated_at = ${updateData.updatedAt || new Date().toISOString()}
         WHERE id = ${updateData.donationId}
         RETURNING *;
@@ -137,15 +172,15 @@ exports.handler = async function(event, context) {
 
       console.log('Donation updated:', result[0]);
 
-      // Send email receipt if status is now completed and we have payment ID
+      // Send email receipt if status is now completed
       let emailResult = null;
-      if (updateData.status === 'completed' && updateData.paymentId) {
+      if (updateData.status === 'completed') {
         const donation = result[0];
         emailResult = await sendDonationReceipt({
           donorName: donation.donor_name,
           donorEmail: donation.donor_email,
           amount: donation.amount,
-          transactionId: updateData.paymentId,
+          transactionId: updateData.paymentId || updateData.subscriptionId || donation.payment_id || 'N/A',
           donationType: donation.payment_type || 'one-time',
           date: new Date().toLocaleString(),
           message: donation.message || ''

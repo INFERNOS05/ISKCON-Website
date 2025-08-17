@@ -86,29 +86,212 @@ const DonationForm = () => {
   // Handle Razorpay payment
   const handleRazorpayPayment = async (donationId?: string) => {
     try {
-      // Implement Razorpay payment logic here
-      // This is a placeholder - replace with actual Razorpay integration
       console.log('Initiating Razorpay payment for donation ID:', donationId);
+      setApiCallStatus("Initializing payment gateway...");
       
-      // Simulate payment process
-      const paymentSuccessful = Math.random() > 0.3; // 70% success rate for demo
-      
-      if (paymentSuccessful) {
-        // Update donation status to 'completed'
-        await updateDonationStatus(donationId!, 'completed', 'payment_' + Date.now());
-        alert('Payment successful! Thank you for your donation.');
-        setIsSuccess(true);
-      } else {
-        // Update donation status to 'failed'
-        await updateDonationStatus(donationId!, 'failed');
-        alert('Payment failed. Please try again.');
+      if (!donationId) {
+        throw new Error('Donation ID not available for payment processing');
       }
+
+      const values = lastPaymentDetails?.values || form.getValues();
+      const amount = parseFloat(values.amount);
+      
+      // Handle monthly subscription (SIP)
+      if (values.donationType === 'monthly') {
+        await handleMonthlySubscription(donationId, amount, values);
+      } else {
+        // Handle one-time payment
+        await handleOneTimePayment(donationId, amount, values);
+      }
+      
     } catch (error) {
       console.error('Payment processing error:', error);
+      setApiCallStatus(`❌ Payment Error: ${error.message}`);
       if (donationId) {
         await updateDonationStatus(donationId, 'failed');
       }
-      alert('Payment processing failed. Please try again.');
+      alert('Payment processing failed: ' + error.message);
+    }
+  };
+
+  // Handle one-time payment
+  const handleOneTimePayment = async (donationId: string, amount: number, values: z.infer<typeof formSchema>) => {
+    try {
+      setApiCallStatus("Creating Razorpay order...");
+      
+      // Create Razorpay order
+      const orderResponse = await fetch('/.netlify/functions/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: amount * 100, // Convert to paise
+          currency: 'INR',
+          receipt: `donation_${donationId}`,
+          notes: {
+            donationId,
+            donorName: values.fullName,
+            donorEmail: values.email
+          }
+        })
+      });
+
+      const orderData = await orderResponse.json();
+      if (!orderData.success) {
+        throw new Error(orderData.error || 'Failed to create payment order');
+      }
+
+      setApiCallStatus("Opening Razorpay checkout...");
+      
+      // Initialize Razorpay checkout
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_your_key',
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: 'ISKCON Donation',
+        description: 'Support our mission',
+        order_id: orderData.order.id,
+        handler: async (response: any) => {
+          await handlePaymentSuccess(donationId, response, 'one-time');
+        },
+        modal: {
+          ondismiss: async () => {
+            setApiCallStatus("Payment cancelled by user");
+            await updateDonationStatus(donationId, 'cancelled');
+          }
+        },
+        prefill: {
+          name: values.fullName,
+          email: values.email,
+          contact: values.phoneNumber || ''
+        },
+        theme: {
+          color: '#3399cc'
+        }
+      };
+
+      // Create and open Razorpay instance
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+      
+    } catch (error) {
+      console.error('One-time payment error:', error);
+      throw error;
+    }
+  };
+
+  // Handle monthly subscription
+  const handleMonthlySubscription = async (donationId: string, amount: number, values: z.infer<typeof formSchema>) => {
+    try {
+      setApiCallStatus("Getting subscription plan...");
+      
+      // Get plan ID for the amount
+      const planResponse = await fetch(`/.netlify/functions/get-plan-id?amount=${amount}`);
+      const planData = await planResponse.json();
+      
+      if (!planData.success) {
+        throw new Error(planData.error || 'Failed to get subscription plan');
+      }
+
+      setApiCallStatus("Creating subscription...");
+      
+      // Create subscription
+      const subscriptionResponse = await fetch('/.netlify/functions/create-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planId: planData.planId,
+          customerDetails: {
+            name: values.fullName,
+            email: values.email
+          },
+          notes: {
+            donationId,
+            donationType: 'monthly'
+          }
+        })
+      });
+
+      const subscriptionData = await subscriptionResponse.json();
+      if (!subscriptionData.success) {
+        throw new Error(subscriptionData.error || 'Failed to create subscription');
+      }
+
+      setApiCallStatus("Opening subscription payment...");
+      
+      // Update donation with subscription ID
+      await updateDonationStatus(donationId, 'pending', undefined, subscriptionData.subscription.id);
+      
+      // Initialize Razorpay for subscription
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_your_key',
+        subscription_id: subscriptionData.subscription.id,
+        name: 'ISKCON Monthly Donation',
+        description: `Monthly donation of ₹${amount}`,
+        handler: async (response: any) => {
+          await handlePaymentSuccess(donationId, response, 'monthly');
+        },
+        modal: {
+          ondismiss: async () => {
+            setApiCallStatus("Subscription cancelled by user");
+            await updateDonationStatus(donationId, 'cancelled');
+          }
+        },
+        prefill: {
+          name: values.fullName,
+          email: values.email,
+          contact: values.phoneNumber || ''
+        },
+        theme: {
+          color: '#3399cc'
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+      
+    } catch (error) {
+      console.error('Subscription payment error:', error);
+      throw error;
+    }
+  };
+
+  // Handle payment success
+  const handlePaymentSuccess = async (donationId: string, paymentResponse: any, paymentType: string) => {
+    try {
+      setApiCallStatus("Verifying payment...");
+      
+      // Verify payment with backend
+      const verificationResponse = await fetch('/.netlify/functions/verify-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(paymentResponse)
+      });
+
+      const verificationData = await verificationResponse.json();
+      
+      if (verificationData.success) {
+        setApiCallStatus("Payment verified successfully!");
+        
+        // Update donation status to completed
+        await updateDonationStatus(
+          donationId, 
+          'completed', 
+          paymentResponse.razorpay_payment_id,
+          paymentResponse.razorpay_subscription_id
+        );
+        
+        setIsSuccess(true);
+        setApiCallStatus("✅ Donation completed successfully!");
+        alert('Payment successful! Thank you for your donation.');
+      } else {
+        throw new Error('Payment verification failed');
+      }
+      
+    } catch (error) {
+      console.error('Payment verification error:', error);
+      setApiCallStatus(`❌ Payment verification failed: ${error.message}`);
+      await updateDonationStatus(donationId, 'failed');
+      alert('Payment verification failed. Please contact support.');
     }
   };
 
@@ -119,27 +302,39 @@ const DonationForm = () => {
   };
 
   // Update donation status after payment
-  const updateDonationStatus = async (donationId: string, status: string, paymentId?: string) => {
+  const updateDonationStatus = async (donationId: string, status: string, paymentId?: string, subscriptionId?: string) => {
     try {
       const apiUrl = `/.netlify/functions/donations`;
+      const updateData = {
+        donationId,
+        status,
+        paymentId,
+        subscriptionId,
+        updatedAt: new Date().toISOString(),
+      };
+
+      console.log('Updating donation status:', updateData);
+      setApiCallStatus(`Updating donation status to: ${status}`);
+      
       const response = await fetch(apiUrl, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          donationId,
-          status,
-          paymentId,
-          updatedAt: new Date().toISOString(),
-        }),
+        body: JSON.stringify(updateData),
       });
       
       const result = await response.json();
       console.log('Donation status updated:', result);
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update donation status');
+      }
+      
       return result;
     } catch (error) {
       console.error('Error updating donation status:', error);
+      setApiCallStatus(`❌ Failed to update status: ${error.message}`);
       throw error;
     }
   };
