@@ -12,7 +12,7 @@ export interface RazorpayResponse {
   razorpay_subscription_id?: string;
 }
 
-export const RAZORPAY_KEY_ID = "rzp_test_5Gr07DWc1NdDc9";
+export const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_your_key_here";
 
 // Plan IDs for different SIP amounts (monthly subscription plans)
 export const PLAN_IDS = {

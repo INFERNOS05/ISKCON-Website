@@ -5,8 +5,12 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // Validate Razorpay credentials
-const key_id = process.env.RAZORPAY_KEY_ID || 'rzp_test_5Gr07DWc1NdDc9';
-const key_secret = process.env.RAZORPAY_SECRET_KEY || process.env.RAZORPAY_KEY_SECRET || 'qm2Ze9AEhjKjBr0e1tKArHYr';
+const key_id = process.env.RAZORPAY_KEY_ID;
+const key_secret = process.env.RAZORPAY_SECRET_KEY || process.env.RAZORPAY_KEY_SECRET;
+
+if (!key_id || !key_secret) {
+  throw new Error('Missing Razorpay credentials. Please set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET environment variables.');
+}
 
 console.log('🔑 Initializing Razorpay with:', {
   key_id: `${key_id.substring(0, 8)}...`,
