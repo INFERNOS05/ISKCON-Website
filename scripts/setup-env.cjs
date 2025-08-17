@@ -15,12 +15,12 @@ console.log('✅ Generated JWT secret');
 
 // Default environment values
 const envDefaults = {
-  // Database
-  DATABASE_URL: 'postgresql://iskcon_donation_owner:7aYkJeB8sQiR@ep-aged-darkness-a5uxxs4v.us-east-2.aws.neon.tech/iskcon_donation?sslmode=require',
+  // Database - Remove actual connection string from script
+  DATABASE_URL: 'your_neon_database_url_here',
   
-  // Razorpay Test Keys (already configured)
-  RAZORPAY_KEY_ID: 'rzp_test_5Gr07DWc1NdDc9',
-  RAZORPAY_KEY_SECRET: 'qm2Ze9AEhjKjBr0e1tKArHYr',
+  // Razorpay Test Keys - Remove actual keys from script
+  RAZORPAY_KEY_ID: 'rzp_test_your_key_id_here',
+  RAZORPAY_KEY_SECRET: 'your_razorpay_key_secret_here',
   
   // Site URLs for local development
   SITE_URL: 'http://localhost:8888',
@@ -32,7 +32,7 @@ const envDefaults = {
   // Test mode
   TEST_MODE: 'true',
   
-  // Email defaults
+  // Email defaults - Remove hardcoded values
   SMTP_HOST: 'smtp.gmail.com',
   SMTP_PORT: '587',
   SMTP_USER: 'donations@iskcon.org',
