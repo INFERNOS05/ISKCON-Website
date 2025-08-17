@@ -35,8 +35,8 @@ const envDefaults = {
   // Email defaults - Remove hardcoded values
   SMTP_HOST: 'smtp.gmail.com',
   SMTP_PORT: '587',
-  SMTP_USER: 'donations@iskcon.org',
-  SMTP_PASS: 'your_email_app_password_here'
+  SMTP_USER: 'donations@iskcon.org'
+  // SMTP_PASS should be set manually in Netlify environment variables
 };
 
 // Read existing .env file
