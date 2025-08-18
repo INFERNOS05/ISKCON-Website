@@ -148,6 +148,37 @@ export const processRazorpayResponse = async (
     console.warn('❌ Payment verification error:', error);
   }
 
+  // Send email receipt to donor
+  console.log('📧 Sending email receipt to donor...');
+  try {
+    const emailPayload = {
+      to: donorInfo.email,
+      donorName: donorInfo.name,
+      amount: amount,
+      currency: 'INR',
+      paymentId: response.razorpay_payment_id,
+      donationType: response.razorpay_subscription_id ? 'Monthly SIP Donation' : 'One-time Donation',
+      timestamp: new Date().toISOString()
+    };
+
+    const emailResponse = await fetch('/.netlify/functions/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(emailPayload)
+    });
+
+    if (emailResponse.ok) {
+      const emailResult = await emailResponse.json();
+      console.log('✅ Email receipt sent successfully:', emailResult.messageId);
+    } else {
+      const emailError = await emailResponse.text();
+      console.warn('⚠️ Failed to send email receipt:', emailError);
+    }
+  } catch (emailError) {
+    console.warn('❌ Email sending error:', emailError);
+    // Don't fail the payment process if email fails
+  }
+
   // Return success if either database save OR verification succeeded
   // Since we have the payment ID, we know the payment was successful
   if (databaseSaveSuccessful || verificationSuccessful) {
@@ -155,8 +186,8 @@ export const processRazorpayResponse = async (
       success: true,
       transactionId: response.razorpay_payment_id,
       message: databaseSaveSuccessful 
-        ? 'Payment verified and donation saved successfully'
-        : 'Payment successful (verification pending, but donation recorded)'
+        ? 'Payment verified and donation saved successfully. Receipt sent to email.'
+        : 'Payment successful (verification pending, but donation recorded). Receipt sent to email.'
     };
   } else {
     // Even if both failed, we still have the payment ID, so don't fail completely
@@ -164,7 +195,7 @@ export const processRazorpayResponse = async (
     return {
       success: true, // Still return success since payment went through
       transactionId: response.razorpay_payment_id,
-      message: 'Payment successful. Data save pending - please contact support if needed.'
+      message: 'Payment successful. Data save pending - please contact support if needed. Receipt sent to email.'
     };
   }
 };
