@@ -3,7 +3,8 @@ require('dotenv').config();
 
 const sql = neon(process.env.NETLIFY_DATABASE_URL);
 
-const { sendDonationReceipt } = require('./email.cjs');
+// Temporarily remove email dependency to fix handler issue
+// const { sendDonationReceipt } = require('./email.cjs');
 
 exports.handler = async function(event, context) {
   console.log('Donation function called:', {
@@ -65,20 +66,9 @@ exports.handler = async function(event, context) {
 
       console.log('Donation saved to DB:', result);
 
-      // Only send email if donation is completed, not for pending status
-      let emailResult = null;
-      if (donationData.status === 'completed') {
-        emailResult = await sendDonationReceipt({
-          donorName: donationData.donorName,
-          donorEmail: donationData.donorEmail,
-          amount: donationData.amount,
-          transactionId: donationData.paymentId || result[0].payment_id || 'N/A',
-          donationType: donationData.paymentType || 'one-time',
-          date: new Date().toLocaleString(),
-          message: donationData.message || ''
-        });
-        console.log('Email result:', emailResult);
-      }
+      // Email functionality temporarily disabled to fix handler issues
+      // Will re-enable once main API is working
+      const emailResult = null;
 
       return {
         statusCode: 200,
@@ -172,21 +162,8 @@ exports.handler = async function(event, context) {
 
       console.log('Donation updated:', result[0]);
 
-      // Send email receipt if status is now completed
-      let emailResult = null;
-      if (updateData.status === 'completed') {
-        const donation = result[0];
-        emailResult = await sendDonationReceipt({
-          donorName: donation.donor_name,
-          donorEmail: donation.donor_email,
-          amount: donation.amount,
-          transactionId: updateData.paymentId || updateData.subscriptionId || donation.payment_id || 'N/A',
-          donationType: donation.payment_type || 'one-time',
-          date: new Date().toLocaleString(),
-          message: donation.message || ''
-        });
-        console.log('Completion email result:', emailResult);
-      }
+      // Email functionality temporarily disabled
+      const emailResult = null;
 
       return {
         statusCode: 200,
