@@ -202,14 +202,30 @@ const MultistepDonation = () => {
   };
   
   // Handle successful payment
-  const handlePaymentSuccess = async (response: any, amount: number, donorInfo: any) => {
+  const handlePaymentSuccess = async (response: any, amount: number, basicDonorInfo: any) => {
     try {
+      // Get complete form values for comprehensive donor info
+      const formValues = form.getValues();
+      
+      // Create complete donor info with all form data
+      const completeDonorInfo = {
+        name: formValues.fullName,
+        email: formValues.email,
+        phone: formValues.phone,
+        address: formValues.address,
+        panCard: formValues.panCard,
+        isRecurring: formValues.isRecurring
+      };
+      
+      console.log('Processing payment success with complete donor info:', completeDonorInfo);
+      
       // Process the payment response through our service
-      const result = await processRazorpayResponse(response, amount, donorInfo);
+      const result = await processRazorpayResponse(response, amount, completeDonorInfo);
       
       if (result.success) {
         setTransactionId(result.transactionId);
         setIsSuccess(true);
+        console.log('Payment and database save completed successfully');
       } else {
         setPaymentError(result.message || "Payment verification failed");
       }

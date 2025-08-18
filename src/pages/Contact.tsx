@@ -85,20 +85,22 @@ const ContactPage = () => {
             <form className="space-y-6">
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="contact-name" className="block text-sm font-medium text-gray-300 mb-2">
                     Full Name
                   </label>
                   <Input 
+                    id="contact-name"
                     type="text"
                     className="bg-white text-prachetas-black border-gray-300"
                     placeholder="Your name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="contact-email" className="block text-sm font-medium text-gray-300 mb-2">
                     Email
                   </label>
                   <Input 
+                    id="contact-email"
                     type="email"
                     className="bg-white text-prachetas-black border-gray-300"
                     placeholder="your@email.com"
@@ -106,20 +108,22 @@ const ContactPage = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="contact-subject" className="block text-sm font-medium text-gray-300 mb-2">
                   Subject
                 </label>
                 <Input 
+                  id="contact-subject"
                   type="text"
                   className="bg-white text-prachetas-black border-gray-300"
                   placeholder="How can we help?"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label htmlFor="contact-message" className="block text-sm font-medium text-gray-300 mb-2">
                   Message
                 </label>
                 <Textarea 
+                  id="contact-message"
                   className="bg-white text-prachetas-black border-gray-300 h-32"
                   placeholder="Your message..."
                 />

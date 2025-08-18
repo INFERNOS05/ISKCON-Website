@@ -39,6 +39,9 @@ interface RazorpayOptions {
   theme?: {
     color?: string;
   };
+  modal?: {
+    ondismiss?: () => void;
+  };
   handler?: (response: any) => void;
 }
 
@@ -89,7 +92,8 @@ export const initializePayment = async ({
   prefill,
   notes = {},
   theme,
-  handler
+  handler,
+  onDismiss
 }: {
   amount: number;
   currency?: string;
@@ -99,6 +103,7 @@ export const initializePayment = async ({
   notes?: Record<string, string>;
   theme?: RazorpayOptions["theme"];
   handler?: (response: any) => void;
+  onDismiss?: () => void;
 }): Promise<void> => {
   try {
     // Create order
@@ -129,6 +134,7 @@ export const initializePayment = async ({
       prefill,
       notes,
       theme: theme || { color: "#059669" },
+      modal: onDismiss ? { ondismiss: onDismiss } : undefined,
       handler
     };
 
@@ -161,7 +167,8 @@ export const initializeRecurringPayment = async ({
   prefill,
   notes = {},
   theme,
-  handler
+  handler,
+  onDismiss
 }: {
   amount: number;
   currency?: string;
@@ -171,6 +178,7 @@ export const initializeRecurringPayment = async ({
   notes?: Record<string, string>;
   theme?: RazorpayOptions["theme"];
   handler?: (response: any) => void;
+  onDismiss?: () => void;
 }): Promise<void> => {
   try {
     // Get plan ID
@@ -200,6 +208,7 @@ export const initializeRecurringPayment = async ({
         payment_type: "recurring_sip"
       },
       theme: theme || { color: "#059669" },
+      modal: onDismiss ? { ondismiss: onDismiss } : undefined,
       handler
     };
 
