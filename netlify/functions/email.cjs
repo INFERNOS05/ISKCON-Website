@@ -31,7 +31,10 @@ exports.handler = async (event, context) => {
       paymentId, 
       donationId,
       donationType = 'One-time Donation',
-      timestamp = new Date().toISOString()
+      timestamp = new Date().toISOString(),
+      donorAddress = '',
+      donorPAN = '',
+      donorPhone = ''
     } = payload;
 
     if (!to || !donorName || !amount || !paymentId) {
@@ -83,6 +86,42 @@ exports.handler = async (event, context) => {
       hour: '2-digit',
       minute: '2-digit'
     });
+
+    // Generate PDF receipt
+    console.log('📄 Generating PDF receipt...');
+    let pdfBuffer = null;
+    
+    try {
+      const pdfPayload = {
+        donorName,
+        amount,
+        paymentId,
+        donationId,
+        receiptDate: donationDate.split(',')[0], // Just the date part
+        timestamp,
+        donorAddress,
+        donorPAN
+      };
+
+      // Call our PDF generation function internally
+      const pdfEvent = {
+        httpMethod: 'POST',
+        body: JSON.stringify(pdfPayload)
+      };
+
+      // Import the PDF handler
+      const { handler: pdfHandler } = require('./generate-receipt-pdf.cjs');
+      const pdfResponse = await pdfHandler(pdfEvent);
+
+      if (pdfResponse.statusCode === 200 && pdfResponse.isBase64Encoded) {
+        pdfBuffer = Buffer.from(pdfResponse.body, 'base64');
+        console.log('✅ PDF generated successfully, size:', pdfBuffer.length, 'bytes');
+      } else {
+        console.warn('⚠️ PDF generation failed:', pdfResponse.body);
+      }
+    } catch (pdfError) {
+      console.warn('❌ PDF generation error:', pdfError.message);
+    }
 
     // Create professional HTML email template
     const htmlTemplate = `
@@ -180,6 +219,7 @@ exports.handler = async (event, context) => {
             
             <div style="text-align: center; margin: 30px 0;">
                 <p><strong>Keep this receipt for your records.</strong></p>
+                ${pdfBuffer ? '<p>📎 <strong>Official ISKCON receipt PDF is attached to this email.</strong></p>' : ''}
                 <p style="font-size: 14px; color: #666;">For any questions about your donation, please contact us at <a href="mailto:${process.env.SMTP_USER}">${process.env.SMTP_USER}</a></p>
             </div>
         </div>
@@ -227,6 +267,17 @@ ISKCON Team
 This is an automated receipt. Please do not reply to this email.
     `;
 
+    // Prepare email attachments
+    const attachments = [];
+    if (pdfBuffer) {
+      const receiptNo = donationId ? `DR_API_${donationId}` : `DR_API_${paymentId.slice(-4)}`;
+      attachments.push({
+        filename: `ISKCON_Receipt_${receiptNo}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      });
+    }
+
     // Send email
     const info = await transporter.sendMail({
       from: `"ISKCON Donations" <${process.env.SMTP_USER}>`,
@@ -234,6 +285,7 @@ This is an automated receipt. Please do not reply to this email.
       subject: `🙏 Donation Receipt - Thank You ${donorName}! (${formattedAmount})`,
       text: textTemplate,
       html: htmlTemplate,
+      attachments: attachments
     });
 
     console.log('Email sent successfully:', {

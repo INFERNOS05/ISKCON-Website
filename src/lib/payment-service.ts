@@ -158,7 +158,11 @@ export const processRazorpayResponse = async (
       currency: 'INR',
       paymentId: response.razorpay_payment_id,
       donationType: response.razorpay_subscription_id ? 'Monthly SIP Donation' : 'One-time Donation',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      // Additional data for PDF receipt
+      donorAddress: donorInfo.address || '',
+      donorPAN: donorInfo.panCard || '',
+      donorPhone: donorInfo.phone || ''
     };
 
     const emailResponse = await fetch('/.netlify/functions/email', {
