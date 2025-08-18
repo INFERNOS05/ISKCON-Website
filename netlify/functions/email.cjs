@@ -44,6 +44,20 @@ exports.handler = async (event, context) => {
       };
     }
 
+    // Check if email credentials are configured
+    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+      console.log('📧 Email credentials not configured, skipping email send');
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ 
+          success: true, 
+          message: 'Email credentials not configured - skipping email send',
+          warning: 'Please configure SMTP credentials in Netlify environment variables'
+        })
+      };
+    }
+
     // Create transporter
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
