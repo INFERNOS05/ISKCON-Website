@@ -144,7 +144,7 @@ const DonationForm = () => {
       
       // Initialize Razorpay checkout
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_your_key',
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_5Gr07DWc1NdDc9',
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: 'ISKCON Donation',
@@ -223,7 +223,7 @@ const DonationForm = () => {
       
       // Initialize Razorpay for subscription
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_your_key',
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_5Gr07DWc1NdDc9',
         subscription_id: subscriptionData.subscription.id,
         name: 'ISKCON Monthly Donation',
         description: `Monthly donation of ₹${amount}`,
