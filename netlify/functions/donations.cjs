@@ -252,5 +252,4 @@ exports.handler = async function(event, context) {
     },
     body: JSON.stringify({ success: false, error: 'Method Not Allowed' })
   };
-}
-x`x`
+};

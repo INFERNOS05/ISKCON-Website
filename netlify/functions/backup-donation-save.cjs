@@ -1,10 +1,7 @@
-const { Pool } = require('pg');
+const { neon } = require('@neondatabase/serverless');
 
-// Configure the PostgreSQL connection
-const pool = new Pool({
-  connectionString: process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
-});
+// Configure the Neon connection
+const sql = neon(process.env.NETLIFY_DATABASE_URL || process.env.DATABASE_URL);
 
 exports.handler = async (event, context) => {
   console.log('🔄 Backup donation save triggered');
@@ -46,39 +43,32 @@ exports.handler = async (event, context) => {
     }
 
     // Insert into database with backup flag
-    const query = `
-      INSERT INTO donations (
-        donor_name, donor_email, donor_phone, donor_address, pan_card,
-        amount, currency, payment_type, payment_id, subscription_id,
-        status, message, receive_updates, payment_method, created_at,
-        backup_save
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-      RETURNING id, payment_id;
-    `;
-
-    const values = [
-      donationData.donorName,
-      donationData.donorEmail,
-      donationData.donorPhone || '',
-      donationData.address || '',
-      donationData.panCard || '',
-      donationData.amount,
-      donationData.currency || 'INR',
-      donationData.paymentType || 'one_time',
-      donationData.paymentId,
-      donationData.subscriptionId || null,
-      donationData.status || 'completed',
-      donationData.message || 'Backup save - payment successful',
-      donationData.receiveUpdates || true,
-      donationData.paymentMethod || 'razorpay',
-      donationData.createdAt || new Date().toISOString(),
-      true // backup_save flag
-    ];
-
     console.log('🗃️ Executing backup database insert...');
-    const result = await pool.query(query, values);
+    const result = await sql`
+      INSERT INTO donations (
+        donor_name, donor_email, donor_phone, address, pan_card,
+        amount, currency, payment_type, payment_id, subscription_id,
+        status, message, receive_updates, payment_method, created_at
+      ) VALUES (
+        ${donationData.donorName},
+        ${donationData.donorEmail},
+        ${donationData.donorPhone || ''},
+        ${donationData.address || ''},
+        ${donationData.panCard || ''},
+        ${donationData.amount},
+        ${donationData.currency || 'INR'},
+        ${donationData.paymentType || 'one_time'},
+        ${donationData.paymentId},
+        ${donationData.subscriptionId || null},
+        ${donationData.status || 'completed'},
+        ${donationData.message || 'Backup save - payment successful'},
+        ${donationData.receiveUpdates || true},
+        ${donationData.paymentMethod || 'razorpay'},
+        ${donationData.createdAt || new Date().toISOString()}
+      ) RETURNING id, payment_id;
+    `;
     
-    console.log('✅ Backup donation saved successfully:', result.rows[0]);
+    console.log('✅ Backup donation saved successfully:', result[0]);
 
     return {
       statusCode: 200,
@@ -86,8 +76,8 @@ exports.handler = async (event, context) => {
       body: JSON.stringify({
         success: true,
         message: 'Donation saved via backup method',
-        donationId: result.rows[0].id,
-        paymentId: result.rows[0].payment_id,
+        donationId: result[0].id,
+        paymentId: result[0].payment_id,
         timestamp: new Date().toISOString()
       })
     };
