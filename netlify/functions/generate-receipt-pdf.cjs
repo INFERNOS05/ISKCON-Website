@@ -76,73 +76,62 @@ exports.handler = async (event, context) => {
       return y + 10;
     };
 
-    let currentY = 60;
+    let currentY = 30;
 
-    // ISKCON Header
-    currentY = addCenteredText('INTERNATIONAL SOCIETY FOR KRISHNA CONSCIOUSNESS (ISKCON)', currentY, 16, 'Helvetica-Bold');
-    currentY = addCenteredText('Founder Acharya: His Divine Grace A.C. Bhaktivedanta Swami Srila Prabhupada', currentY, 10);
-    currentY = addCenteredText('(Head Office: Hare Krishna Land, Juhu, Mumbai - 400 049)', currentY, 10);
-    currentY += 10;
-    currentY = addCenteredText('Branch: 4 Tarapore Road, Next to Dastur Boys School, Pune Maharashtra 411001 Ph: 8686957575', currentY, 10);
+    // Add ISKCON Header as single image (logo + text from template)
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const headerImagePath = path.join(__dirname, '../../public/iskcon-header.png');
+      
+      if (fs.existsSync(headerImagePath)) {
+        // Use the header screenshot directly - fits full width with margins
+        const headerWidth = doc.page.width - 80; // 40px margin on each side
+        doc.image(headerImagePath, 40, currentY, { 
+          width: headerWidth,
+          fit: [headerWidth, 120] // Max height 120px, maintain aspect ratio
+        });
+        currentY += 95; // Move down after header image (further reduced)
+        console.log('✅ Header image added successfully');
+      } else {
+        console.warn('⚠️ iskcon-header.png not found in public folder');
+        console.warn('Please save the header screenshot as iskcon-header.png in public folder');
+        
+        // Fallback: show message in PDF
+        doc.font('Helvetica').fontSize(12).fillColor('red');
+        doc.text('Header image not found. Please add iskcon-header.png to public folder', 40, currentY);
+        currentY += 30;
+      }
+    } catch (headerError) {
+      console.error('❌ Header image error:', headerError.message);
+      doc.font('Helvetica').fontSize(10).fillColor('black');
+      doc.text('Error loading header image', 40, currentY);
+      currentY += 30;
+    }
     
-    currentY += 20;
-    currentY = addLine(currentY);
-    currentY += 20;
+    currentY += 5; // Minimal gap after header
+
+    // Horizontal line
+    doc.moveTo(50, currentY)
+       .lineTo(doc.page.width - 50, currentY)
+       .stroke();
+    currentY += 25;
 
     // Receipt Title
-    currentY = addCenteredText('RECEIPT', currentY, 18, 'Helvetica-Bold');
-    currentY += 20;
+    doc.font('Helvetica-Bold').fontSize(16);
+    headerText = 'RECEIPT';
+    textWidth = doc.widthOfString(headerText);
+    headerX = (doc.page.width - textWidth) / 2;
+    doc.text(headerText, headerX, currentY);
+    currentY += 30;
 
-    // Receipt Details
-    const leftMargin = 80;
-    const rightMargin = doc.page.width - 80;
-    const lineHeight = 25;
+    // Receipt Details - Matching template layout
+    const leftMargin = 60;
+    const labelColumn = leftMargin;
+    const valueColumn = leftMargin + 200;
+    const lineHeight = 20;
+    const fontSize = 10;
 
-    doc.font('Helvetica').fontSize(11);
-
-    // Receipt Date
-    doc.text('Receipt Date:', leftMargin, currentY);
-    doc.text(receiptDate, leftMargin + 100, currentY);
-    currentY += lineHeight;
-
-    // Receipt Number
-    const receiptNo = donationId ? `DR/API/${donationId}` : `DR/API/${paymentId.slice(-4)}`;
-    doc.text('Receipt No:', leftMargin, currentY);
-    doc.text(receiptNo, leftMargin + 100, currentY);
-    currentY += lineHeight;
-
-    // Donor Name
-    doc.text('Received with thanks from:', leftMargin, currentY);
-    doc.font('Helvetica-Bold').text(donorName, leftMargin + 160, currentY);
-    doc.font('Helvetica');
-    currentY += lineHeight;
-
-    // Address
-    doc.text('Address:', leftMargin, currentY);
-    if (donorAddress) {
-      const addressLines = donorAddress.match(/.{1,50}(\s|$)/g) || [donorAddress];
-      addressLines.forEach((line, index) => {
-        doc.text(line.trim(), leftMargin + 100, currentY + (index * 15));
-      });
-      currentY += lineHeight + (addressLines.length - 1) * 15;
-    } else {
-      currentY += lineHeight;
-    }
-
-    currentY += 10;
-
-    // PAN Number
-    doc.text('Donor PAN No:', leftMargin, currentY);
-    doc.text(donorPAN || '', leftMargin + 100, currentY);
-    currentY += lineHeight;
-
-    // Amount
-    doc.text('Amount:', leftMargin, currentY);
-    const formattedAmount = new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
-    }).format(amount);
-    
     // Amount in words function
     const numberToWords = (num) => {
       const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -185,40 +174,96 @@ exports.handler = async (event, context) => {
       return result.trim();
     };
 
+    const formattedAmount = 'Rs. ' + new Intl.NumberFormat('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
     const amountInWords = numberToWords(Math.floor(amount));
-    
-    doc.font('Helvetica-Bold').text(`${formattedAmount} (${amountInWords} Only)`, leftMargin + 100, currentY);
-    doc.font('Helvetica');
-    currentY += lineHeight;
-
-    // Payment Details
+    const receiptNo = donationId ? `DR/API/${donationId}` : `DR/API/${paymentId.slice(-4)}`;
     const paymentDate = new Date(timestamp).toLocaleDateString('en-GB');
-    doc.text('Mode Of Payment:', leftMargin, currentY);
-    doc.text(`ONLINE No. ${paymentId} | Dated: ${paymentDate} | Bank: | Branch:`, leftMargin + 120, currentY);
+
+    // Set consistent font for receipt details - labels regular, values bold
+    doc.fillColor('black').font('Helvetica').fontSize(fontSize);
+
+    // Receipt Date - label regular, value bold
+    doc.font('Helvetica').text('Receipt Date: ', labelColumn, currentY, { continued: true });
+    doc.font('Helvetica-Bold').text(receiptDate);
     currentY += lineHeight;
 
-    // On Account of
-    doc.text('On Account of:', leftMargin, currentY);
-    doc.font('Helvetica-Bold').text('Donation', leftMargin + 100, currentY);
-    doc.font('Helvetica');
-    currentY += lineHeight * 3;
-
-    // Footer
-    currentY += 100;
-    doc.text('Yours in the service of Lord Sri Krishna. ', leftMargin, currentY);
-    doc.fillColor('blue').text('Click here to visit iskconpunecamp.com', leftMargin + 280, currentY);
+    // Receipt Number - label regular, value bold
+    doc.font('Helvetica').text('Receipt No: ', labelColumn, currentY, { continued: true });
+    doc.font('Helvetica-Bold').text(receiptNo);
     currentY += lineHeight;
 
-    doc.fillColor('black').fontSize(10).text('Note: This is a computer generated receipt. No signature is required.', leftMargin, currentY);
+    // Donor Name - label regular, value bold
+    doc.font('Helvetica').text('Received with thanks from: ', labelColumn, currentY, { continued: true });
+    doc.font('Helvetica-Bold').text(donorName);
     currentY += lineHeight;
 
-    // Hare Krishna Mantra
-    currentY += 20;
-    currentY = addLine(currentY);
-    currentY += 10;
+    // Address - label regular, value on same line
+    doc.font('Helvetica').text('Address:', labelColumn, currentY);
+    if (donorAddress) {
+      doc.text(' ' + donorAddress, { continued: false });
+    }
+    currentY += lineHeight;
+
+    currentY += 5;
+
+    // PAN Number - label regular, value on same line
+    doc.font('Helvetica').text('Donor PAN No:', labelColumn, currentY);
+    currentY += lineHeight;
+
+    // Amount - label regular, value bold
+    doc.font('Helvetica').text('Amount: ', labelColumn, currentY, { continued: true });
+    doc.font('Helvetica-Bold').text(`${formattedAmount} (${amountInWords} Only)`);
+    currentY += lineHeight;
+
+    // Payment Details - All on one line, label regular, ONLINE and payment details bold
+    doc.font('Helvetica').text('Mode Of Payment: ', labelColumn, currentY, { continued: true });
+    doc.font('Helvetica-Bold').text(`ONLINE`, { continued: true });
+    doc.font('Helvetica').text(` No: ${paymentId} | Dated: ${paymentDate} | Bank: | Branch:`);
+    currentY += lineHeight;
+
+    // On Account of - label regular, value bold
+    doc.font('Helvetica').text('On Account of: ', labelColumn, currentY, { continued: true });
+    doc.font('Helvetica-Bold').text('Donation');
+    currentY += lineHeight * 2;
+
+    // Footer - matching template
+    currentY += 80;
+    const footerMargin = 60;
     
-    doc.fillColor('red').fontSize(12).font('Helvetica-Bold');
-    currentY = addCenteredText('Hare Krishna Hare Krishna Krishna Krishna Hare Hare Hare Rama Hare Rama Rama Rama Hare Hare', currentY);
+    // First line: "Yours in the service..." with clickable link on same line
+    doc.fillColor('black').fontSize(10).font('Helvetica');
+    doc.text('Yours in the service of Lord Sri Krishna. ', footerMargin, currentY, { continued: true });
+    doc.fillColor('blue').text('Click here to visit iskconpunecamp.com', {
+      link: 'https://www.iskconpunecamp.com/',
+      underline: true,
+      continued: false
+    });
+    currentY += 20;
+
+    // Note in italic font
+    doc.fillColor('black').fontSize(9).font('Helvetica-Oblique');
+    doc.text('Note: This is a computer generated receipt. No signature is required.', footerMargin, currentY);
+    currentY += 30;
+
+    // Hare Krishna Mantra - centered, red/maroon, regular font (not bold), smaller size
+    doc.fillColor('maroon').fontSize(9).font('Helvetica');
+    const mantraText = 'Hare Krishna Hare Krishna Krishna Krishna Hare Hare Hare Rama Hare Rama Rama Rama Hare Hare';
+    const mantraWidth = doc.widthOfString(mantraText);
+    const mantraX = (doc.page.width - mantraWidth) / 2;
+    doc.text(mantraText, mantraX, currentY);
+    currentY += 20;
+
+    // Dotted line below mantra
+    doc.strokeColor('black')
+       .lineWidth(1)
+       .dash(5, 5) // 5px dash, 5px gap
+       .moveTo(50, currentY)
+       .lineTo(doc.page.width - 50, currentY)
+       .stroke()
+       .undash(); // Reset to solid line for future use
 
     // Finalize PDF
     doc.end();
