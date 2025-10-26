@@ -139,10 +139,10 @@ const MultistepDonation = () => {
           // Initialize recurring SIP payment
           console.log(`Initializing SIP payment for amount: ₹${amount}`);
           
-          // Check if we're handling a valid SIP amount
-          const validSipAmounts = [100, 200, 500, 1000];
-          if (!validSipAmounts.includes(amount)) {
-            throw new Error(`Invalid SIP amount: ₹${amount}. Please select from the available options: ₹100, ₹200, ₹500, or ₹1000.`);
+          // Validate minimum SIP amount
+          const MIN_SIP_AMOUNT = 50;
+          if (amount < MIN_SIP_AMOUNT) {
+            throw new Error(`Minimum SIP amount is ₹${MIN_SIP_AMOUNT}. Please enter an amount of ₹${MIN_SIP_AMOUNT} or more.`);
           }
           
           await initializeRecurringPayment({
@@ -469,8 +469,8 @@ const MultistepDonation = () => {
                             </div>
                             {field.value && (
                               <div className="ml-8 mt-2 text-sm text-gray-400">
-                                <p>Select this option to set up a monthly Systematic Investment Plan (SIP) donation to support our work consistently.</p>
-                                <p className="mt-1">Available in pre-set amounts of ₹100, ₹200, ₹500, and ₹1000.</p>
+                                <p>Set up a monthly Systematic Investment Plan (SIP) donation to support our work consistently.</p>
+                                <p className="mt-1">You can choose from preset amounts (₹100, ₹200, ₹500, ₹1000) or enter any custom amount (minimum ₹50).</p>
                               </div>
                             )}
                           </div>
