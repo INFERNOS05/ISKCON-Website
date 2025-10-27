@@ -14,7 +14,8 @@ export interface RazorpayResponse {
 
 export const RAZORPAY_KEY_ID = import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_5Gr07DWc1NdDc9";
 
-// Plan IDs for different SIP amounts (monthly subscription plans)
+// Predefined Plan IDs for common SIP amounts (used as fallback only)
+// NOTE: Backend now dynamically creates plans for custom amounts
 export const PLAN_IDS = {
   100: "plan_Qh8r9nUPEt3Dbv", // ₹100/month
   200: "plan_Qh8s8EzXQr7DXu", // ₹200/month
@@ -222,9 +223,11 @@ export const initializeRecurringPayment = async ({
 
 /**
  * Gets the appropriate subscription plan ID based on the amount
- * This calls our backend API to find the right plan ID
+ * This calls our backend API which supports any custom amount
+ * The backend will use predefined plans for common amounts (₹100, ₹200, ₹500, ₹1000)
+ * and dynamically create new plans for custom amounts
  * 
- * @param amount - The subscription amount
+ * @param amount - The subscription amount (minimum ₹50)
  * @param currency - The currency, defaults to INR
  * @returns Promise with the plan ID
  */

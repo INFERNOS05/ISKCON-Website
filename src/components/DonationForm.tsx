@@ -96,6 +96,19 @@ const DonationForm = () => {
       const values = lastPaymentDetails?.values || form.getValues();
       const amount = parseFloat(values.amount);
       
+      // Validate amount
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error('Invalid donation amount');
+      }
+      
+      // Validate minimum SIP amount for monthly donations
+      if (values.donationType === 'monthly') {
+        const MIN_SIP_AMOUNT = 50;
+        if (amount < MIN_SIP_AMOUNT) {
+          throw new Error(`Minimum monthly donation amount is ₹${MIN_SIP_AMOUNT}`);
+        }
+      }
+      
       // Handle monthly subscription (SIP)
       if (values.donationType === 'monthly') {
         await handleMonthlySubscription(donationId, amount, values);
@@ -184,7 +197,7 @@ const DonationForm = () => {
     try {
       setApiCallStatus("Getting subscription plan...");
       
-      // Get plan ID for the amount
+      // Get plan ID for the amount (supports custom amounts via dynamic plan creation)
       const planResponse = await fetch(`/.netlify/functions/get-plan-id?amount=${amount}`);
       const planData = await planResponse.json();
       
